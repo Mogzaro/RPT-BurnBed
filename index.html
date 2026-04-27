@@ -1,0 +1,2525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPT Burn & Bed — Google Sheets Connected</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  /* ── Warm White / Cozy Light Theme ── */
+  --bg:    #f7f5f2;
+  --bg2:   #ffffff;
+  --bg3:   #f0ede8;
+  --card:  #ffffff;
+  --card2: #faf8f5;
+  --border:  #e8e3db;
+  --border2: #d4cdc3;
+
+  /* Brand — slightly toned down for light bg */
+  --burn:  #e8450a;
+  --burn2: #f07040;
+  --burn-dim: #fde8e0;
+  --burn-glow: rgba(232,69,10,0.18);
+  --bed:   #1a63d8;
+  --bed2:  #4a8fef;
+  --bed-dim: #ddeafd;
+  --bed-glow: rgba(26,99,216,0.18);
+
+  /* Accents */
+  --green:  #16a34a;
+  --green2: #22c55e;
+  --green-dim: #dcfce7;
+  --yellow: #b45309;
+  --yellow-dim: #fef3c7;
+  --purple: #7c3aed;
+  --purple-dim: #ede9fe;
+  --cyan:   #0891b2;
+  --pink:   #db2777;
+
+  /* Text — warm grays */
+  --text:  #1c1a18;
+  --text2: #6b6560;
+  --text3: #a89e95;
+
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 0% 0%,rgba(232,69,10,0.04) 0%,transparent 60%),
+             radial-gradient(ellipse 50% 40% at 100% 100%,rgba(26,99,216,0.04) 0%,transparent 60%);}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg3);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* ── HEADER ── */
+.top-header{background:rgba(255,255,255,0.95);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);
+  padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:62px;position:sticky;top:0;z-index:200;box-shadow:0 1px 0 var(--border);}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;display:flex;align-items:center;gap:6px;}
+.logo .rpt{color:var(--text3);font-size:12px;letter-spacing:5px;margin-right:2px;}
+.logo .burn-part{color:var(--burn);}
+.logo .amp{color:var(--border2);}
+.logo .bed-part{color:var(--bed);}
+.header-right{display:flex;align-items:center;gap:10px;}
+.tv-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:99px;
+  cursor:pointer;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;transition:all .2s;letter-spacing:.3px;}
+.tv-btn:hover{background:var(--border);color:var(--text);transform:translateY(-1px);}
+
+/* ── NAV ── */
+.nav-tabs{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;padding:0 28px;overflow-x:auto;position:relative;z-index:100;}
+.nav-tab{padding:14px 18px;color:var(--text3);cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.nav-tab:hover{color:var(--text2);background:var(--bg3);}
+.nav-tab.active{color:var(--burn);border-bottom-color:var(--burn);}
+
+/* ── MAIN ── */
+.main{padding:28px 24px 90px;max-width:1240px;margin:0 auto;position:relative;z-index:1;}
+.module{display:none;}
+.module.active{display:block;animation:fadeIn .28s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── MODULE HEADER ── */
+.module-header{margin-bottom:24px;}
+.module-title{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:2px;line-height:1;}
+.module-subtitle{color:var(--text3);font-size:13px;margin-top:5px;}
+.title-burn{color:var(--burn);} .title-bed{color:var(--bed);}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);}
+.card-title{font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text3);margin-bottom:18px;}
+
+/* ── GRID ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:16px;}
+.form-label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;letter-spacing:.8px;text-transform:uppercase;}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:10px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;transition:all .2s;outline:none;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--burn);box-shadow:0 0 0 3px var(--burn-dim);}
+.form-select option{background:var(--card);color:var(--text);}
+.form-hint{font-size:11px;color:var(--text3);margin-top:4px;}
+
+/* ── AUTOCOMPLETE ── */
+.ac-wrap{position:relative;}
+.ac-results{position:absolute;top:100%;left:0;right:0;z-index:400;background:var(--card);
+  border:1.5px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);
+  max-height:220px;overflow-y:auto;display:none;}
+.ac-results.open{display:block;}
+.ac-item{padding:10px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:10px;
+  transition:background .12s;border-bottom:1px solid var(--border);}
+.ac-item:last-child{border-bottom:none;}
+.ac-item:hover,.ac-item.hi{background:var(--bg3);}
+.ac-id{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--burn);min-width:72px;}
+.ac-name{font-weight:600;flex:1;}
+.ac-team{font-size:11px;color:var(--text3);}
+
+/* ── BUTTONS ── */
+.btn{padding:10px 20px;border-radius:var(--radius-sm);border:none;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;transition:all .2s;
+  display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--burn);color:#fff;box-shadow:0 3px 10px var(--burn-glow);}
+.btn-primary:hover{background:var(--burn2);transform:translateY(-1px);}
+.btn-blue{background:var(--bed);color:#fff;box-shadow:0 3px 10px var(--bed-glow);}
+.btn-blue:hover{background:var(--bed2);transform:translateY(-1px);}
+.btn-secondary{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--border);color:var(--text);}
+.btn-ghost{background:transparent;color:var(--text3);border:1.5px solid var(--border);}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text2);}
+.btn-sm{padding:6px 13px;font-size:12px;}
+
+/* ── ALERTS ── */
+.alert{padding:11px 15px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px;}
+.alert-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;}
+.alert-success{background:rgba(0,230,118,.09);border:1px solid rgba(0,230,118,.3);color:var(--green2);}
+.alert-info{background:rgba(41,121,255,.1);border:1px solid rgba(41,121,255,.3);color:var(--bed2);}
+.alert-warn{background:rgba(255,215,64,.09);border:1px solid rgba(255,215,64,.3);color:var(--yellow);}
+
+/* ── INNER TABS ── */
+.inner-tabs{display:flex;gap:7px;margin-bottom:22px;flex-wrap:wrap;}
+.inner-tab{padding:7px 16px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;
+  border:1px solid var(--border);color:var(--text3);background:transparent;transition:all .18s;
+  letter-spacing:.4px;text-transform:uppercase;}
+.inner-tab:hover{border-color:var(--border2);color:var(--text2);}
+.inner-tab.active{background:var(--burn);color:#fff;border-color:var(--burn);box-shadow:0 2px 8px var(--burn-glow);}
+.inner-panel{display:none;}
+.inner-panel.active{display:block;animation:fadeIn .2s ease;}
+
+/* ── TABLE ── */
+.dtw{overflow-x:auto;}
+.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+.data-table th{text-align:left;padding:10px 13px;font-size:10px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;}
+.data-table td{padding:11px 13px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--bg3);color:var(--text);}
+
+/* ── STAT CARDS ── */
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;position:relative;overflow:hidden;}
+.stat-card.s-burn{border-top:3px solid var(--burn);background:linear-gradient(135deg,#fff 60%,var(--burn-dim));}
+.stat-card.s-bed{border-top:3px solid var(--bed);background:linear-gradient(135deg,#fff 60%,var(--bed-dim));}
+.stat-card.s-green{border-top:3px solid var(--green);background:linear-gradient(135deg,#fff 60%,var(--green-dim));}
+.stat-glow{position:absolute;top:-30px;right:-30px;width:110px;height:110px;border-radius:50%;opacity:.35;}
+.stat-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:1;margin:4px 0;}
+.sv-burn{color:var(--burn);} .sv-bed{color:var(--bed);} .sv-green{color:var(--green);}
+.stat-sub{font-size:11px;color:var(--text3);}
+
+/* ── AID BADGE ── */
+.aid-badge{background:var(--burn-dim);
+  border:1.5px solid rgba(216,67,21,.25);border-radius:var(--radius-sm);padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;margin-top:18px;}
+.aid-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;}
+.aid-value{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--burn);letter-spacing:6px;}
+
+/* ── LEADERBOARD ── */
+.lb-item{display:flex;align-items:center;gap:13px;padding:12px 15px;border-radius:var(--radius-sm);
+  margin-bottom:7px;background:var(--card);border:1px solid var(--border);transition:all .18s;}
+.lb-item:hover{border-color:var(--border2);transform:translateX(3px);}
+.lb-item.top1{background:linear-gradient(90deg,#fffbeb,var(--card));border-color:#fcd34d;}
+.lb-item.top2{background:linear-gradient(90deg,#f8fafc,var(--card));border-color:#94a3b8;}
+.lb-item.top3{background:linear-gradient(90deg,#fdf4ec,var(--card));border-color:#cd7c3a;}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:24px;min-width:36px;color:var(--text3);}
+.lb-rank.r1{color:#fbbf24;} .lb-rank.r2{color:#94a3b8;} .lb-rank.r3{color:#cd7c3a;}
+.lb-info{flex:1;min-width:0;}
+.lb-nickname{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-team{font-size:11px;color:var(--text3);margin-top:1px;}
+.lb-val{text-align:right;}
+.lb-num{font-family:'Bebas Neue',sans-serif;font-size:22px;}
+.lb-unit{font-size:10px;color:var(--text3);}
+
+/* ── TEAM ROW ── */
+.team-row{display:flex;align-items:center;gap:14px;padding:12px 15px;border-radius:var(--radius-sm);
+  background:var(--card);border:1px solid var(--border);margin-bottom:7px;transition:all .18s;}
+.team-row:hover{border-color:var(--border2);}
+.team-rank{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text3);min-width:30px;}
+.team-name{flex:1;font-weight:700;font-size:14px;}
+.team-members{font-size:11px;color:var(--text3);}
+.team-avg{font-family:'Bebas Neue',sans-serif;font-size:22px;text-align:right;}
+
+/* ── PROGRESS BAR ── */
+.pb-wrap{background:var(--bg3);border-radius:99px;height:9px;overflow:hidden;}
+.pb-fill{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.34,1.56,.64,1);}
+.pb-burn{background:linear-gradient(90deg,var(--burn),var(--burn2));}
+.pb-bed{background:linear-gradient(90deg,var(--bed),var(--bed2));}
+
+/* ── FUN WIDGETS ── */
+.fun-widget{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;}
+.fw-title{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;color:var(--text2);}
+.fw-badge{font-size:20px;}
+.wm{border-top:3px solid var(--burn);background:linear-gradient(135deg,#fff 70%,var(--burn-dim));}
+.wm::before{content:'';position:absolute;top:0;right:0;width:90px;height:90px;
+  background:radial-gradient(circle,var(--burn-dim),transparent 70%);pointer-events:none;}
+.wt{border-top:3px solid var(--cyan);background:linear-gradient(135deg,#fff 70%,#e0f7fa);}
+.wf{border-top:3px solid var(--yellow);background:linear-gradient(135deg,#fff 70%,var(--yellow-dim));}
+.wr{border-top:3px solid var(--green);background:linear-gradient(135deg,#fff 70%,var(--green-dim));}
+.wc{border-top:3px solid var(--purple);background:linear-gradient(135deg,#fff 70%,var(--purple-dim));}
+.wb{border-top:3px solid var(--pink);background:linear-gradient(135deg,#fff 70%,#fce4ec);}
+.fun-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.fun-item:last-child{border-bottom:none;}
+.fun-pos{font-family:'JetBrains Mono',monospace;color:var(--text3);min-width:20px;font-size:11px;font-weight:700;}
+.fun-name{flex:1;font-weight:600;}
+.fun-delta{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;}
+.d-up{color:var(--green);} .d-neutral{color:var(--text3);} .d-down{color:var(--burn);}
+
+/* ── HIGHLIGHT FEED ── */
+.hl-item{padding:10px 13px;background:var(--burn-dim);border-radius:var(--radius-sm);font-size:13px;
+  margin-bottom:7px;border-left:3px solid var(--burn);color:var(--text2);}
+.hl-bed{border-left-color:var(--bed);background:var(--bed-dim);}
+.hl-green{border-left-color:var(--green);background:var(--green-dim);}
+.hl-yellow{border-left-color:var(--yellow);background:var(--yellow-dim);}
+
+/* ── CHIPS ── */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;margin:2px;}
+.chip-burn{background:var(--burn-dim);color:var(--burn);border:1px solid rgba(216,67,21,.3);}
+.chip-bed{background:var(--bed-dim);color:var(--bed);border:1px solid rgba(21,101,192,.3);}
+.chip-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(46,125,50,.3);}
+.chip-purple{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(106,27,154,.3);}
+.chip-yellow{background:var(--yellow-dim);color:var(--yellow);border:1px solid rgba(230,81,0,.3);}
+.chip-cyan{background:#e0f7fa;color:var(--cyan);border:1px solid rgba(0,131,143,.3);}
+
+/* ── EVENT BANNER ── */
+.event-banner{background:linear-gradient(120deg,var(--burn),#b33000);border-radius:var(--radius);
+  padding:16px 22px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 4px 20px var(--burn-glow);}
+.banner-text{font-size:15px;font-weight:700;}
+.banner-sub{font-size:12px;opacity:.75;margin-top:2px;}
+.banner-mult{font-family:'Bebas Neue',sans-serif;font-size:56px;color:rgba(255,255,255,.9);line-height:1;}
+
+/* ── EVENT CARDS ── */
+.event-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;}
+.event-card.ev-active{border-color:var(--burn);box-shadow:0 0 24px var(--burn-glow);}
+.ev-mult{font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--burn);line-height:1;}
+.ev-status{position:absolute;top:12px;right:12px;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:99px;text-transform:uppercase;}
+.es-active{background:rgba(0,230,118,.15);color:var(--green2);border:1px solid rgba(0,230,118,.4);}
+.es-upcoming{background:rgba(255,215,64,.12);color:var(--yellow);border:1px solid rgba(255,215,64,.4);}
+.es-ended{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3);}
+
+/* ── SEARCH ── */
+.search-row{display:flex;gap:9px;margin-bottom:18px;}
+.search-input{flex:1;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:10px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:all .2s;}
+.search-input:focus{border-color:var(--burn);box-shadow:0 0 0 3px var(--burn-dim);}
+
+/* ── PERSONAL HERO ── */
+.personal-hero{background:linear-gradient(135deg,var(--burn-dim) 0%,var(--bed-dim) 100%);
+  border:1.5px solid var(--border);border-radius:var(--radius);padding:26px;}
+.personal-name{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:2px;}
+.personal-id{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--burn);}
+
+/* ── UPLOAD ── */
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:28px 20px;
+  text-align:center;cursor:pointer;transition:all .2s;color:var(--text3);}
+.upload-zone:hover{border-color:var(--burn);color:var(--text2);background:rgba(255,87,34,.04);}
+.upload-zone input{display:none;}
+.proof-thumb{max-width:100px;max-height:80px;border-radius:7px;margin-top:10px;object-fit:cover;}
+
+/* ── GOV BOX ── */
+.gov-box{background:var(--yellow-dim);border:1.5px solid rgba(230,81,0,.2);border-radius:var(--radius);padding:20px;}
+.gov-box h4{color:var(--yellow);font-size:12px;margin-bottom:12px;letter-spacing:1px;text-transform:uppercase;font-weight:800;}
+.gov-box li{font-size:13px;color:var(--text2);line-height:1.9;padding-left:4px;}
+.gov-box ul{padding-left:18px;}
+
+/* ── SEP ── */
+.sep{height:1px;background:var(--border);margin:20px 0;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:44px 20px;color:var(--text3);font-size:13px;}
+.empty-state .icon{font-size:36px;margin-bottom:10px;opacity:.5;}
+
+/* ── FLAGS ── */
+.flag-normal{background:var(--green-dim);color:var(--green);border:1px solid rgba(46,125,50,.3);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;}
+.flag-review{background:var(--yellow-dim);color:var(--yellow);border:1px solid rgba(230,81,0,.3);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;}
+
+/* ── REWARD SUBTABS ── */
+.reward-subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.reward-subtab{padding:6px 13px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;
+  border:1px solid var(--border);color:var(--text3);background:transparent;transition:all .18s;text-transform:uppercase;letter-spacing:.5px;}
+.reward-subtab:hover{border-color:var(--border2);color:var(--text2);}
+.reward-subtab.active{background:var(--bed);color:#fff;border-color:var(--bed);box-shadow:0 2px 8px var(--bed-glow);}
+
+/* ── TEAM MANAGE ── */
+.team-manage-row{display:flex;align-items:center;gap:12px;padding:12px 16px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px;transition:all .15s;}
+.team-manage-row:hover{border-color:var(--border2);}
+.tm-name{flex:1;font-weight:700;font-size:14px;}
+.tm-count{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);min-width:80px;text-align:right;}
+
+/* ── DETAIL PANEL ── */
+.detail-panel{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);padding:22px;margin-top:14px;}
+
+/* ── TV MODE ── */
+body.tv-mode .top-header,body.tv-mode .nav-tabs,body.tv-mode .bottom-nav{display:none!important;}
+body.tv-mode .main{display:none!important;}
+#tv-overlay{display:none;position:fixed;inset:0;background:#0d0f14;z-index:500;flex-direction:column;align-items:stretch;padding:0;}
+body.tv-mode #tv-overlay{display:flex;}
+.tv-header-bar{background:rgba(10,12,18,.97);padding:20px 48px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #2c3250;}
+.tv-logo{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:6px;}
+.tv-body{flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;padding:32px 48px;overflow:hidden;}
+.tv-col-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;margin-bottom:20px;}
+.tv-lb-item{display:flex;align-items:center;gap:18px;padding:14px 18px;background:#1e2336;border-radius:var(--radius);border:1px solid #2c3250;margin-bottom:10px;}
+.tv-rank{font-family:'Bebas Neue',sans-serif;font-size:38px;min-width:48px;color:var(--text3);}
+.tv-rank.r1{color:#fbbf24;} .tv-rank.r2{color:#94a3b8;} .tv-rank.r3{color:#cd7c3a;}
+.tv-nick{font-size:20px;font-weight:700;flex:1;color:#edf0fb;}
+.tv-val{font-family:'Bebas Neue',sans-serif;font-size:34px;}
+.tv-exit{position:fixed;top:18px;right:18px;background:#1e2336;border:1px solid #2c3250;color:#8e9ab8;
+  padding:8px 16px;border-radius:99px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;z-index:600;}
+
+/* ── MOBILE ── */
+.bottom-nav{display:none;}
+@media(max-width:768px){
+  .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);
+    backdrop-filter:blur(16px);border-top:1px solid var(--border);z-index:200;height:60px;padding:0 2px;
+    padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -2px 12px rgba(0,0,0,.06);}
+  .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    cursor:pointer;border:none;background:transparent;color:var(--text3);font-family:'DM Sans',sans-serif;
+    font-size:9px;font-weight:700;letter-spacing:.3px;padding:4px 2px;transition:color .15s;
+    border-top:2px solid transparent;margin-top:-1px;text-transform:uppercase;-webkit-tap-highlight-color:transparent;}
+  .bn-icon{font-size:18px;line-height:1;}
+  .bn-item.active{color:var(--burn);border-top-color:var(--burn);}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr!important;}
+  .nav-tabs{display:none;}
+  .main{padding:18px 14px 80px;}
+  .module-title{font-size:30px;}
+  .data-table{min-width:500px;}
+}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+.anim-slide{animation:slideIn .3s ease forwards;}
+
+
+/* ── GOOGLE SHEETS CONNECTOR ADDITIONS ── */
+.gs-banner{background:linear-gradient(120deg,#1e7e34,#28a745);border-radius:var(--radius);padding:16px 22px;
+  margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 4px 18px rgba(40,167,69,.25);color:#fff;}
+.gs-banner.error{background:linear-gradient(120deg,#b71c1c,#d32f2f);}
+.gs-banner.warn{background:linear-gradient(120deg,#e65100,#f57c00);}
+.gs-config-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
+.gs-status-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:7px;}
+.gs-dot-ok{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.5);}
+.gs-dot-err{background:#ef4444;box-shadow:0 0 8px rgba(239,68,68,.5);}
+.gs-dot-idle{background:var(--text3);}
+.gs-dot-loading{background:var(--yellow);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.refresh-spin{display:inline-block;animation:spin 1s linear infinite;}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.source-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;}
+.sb-sheets{background:#e8f5e9;color:#2e7d32;border:1px solid rgba(46,125,50,.3);}
+.sb-local{background:var(--yellow-dim);color:var(--yellow);border:1px solid rgba(230,81,0,.3);}
+.setup-step{display:flex;gap:16px;align-items:flex-start;padding:16px;background:var(--bg3);
+  border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:12px;}
+.step-num{background:var(--burn);color:#fff;border-radius:50%;width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+.step-body{flex:1;}
+.step-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+.step-desc{font-size:13px;color:var(--text2);line-height:1.7;}
+
+</style>
+<script>
+// ── GOOGLE SHEETS CONNECTOR ──────────────────────────────────
+
+// ====================================================
+// GOOGLE SHEETS CONNECTOR
+// Storage key for API URL
+// ====================================================
+const GS_API_KEY = 'rpt_gs_api_url';
+let gsApiUrl = localStorage.getItem(GS_API_KEY) || '';
+let autoRefreshTimer = null;
+let autoRefreshEnabled = false;
+let dataSource = 'local'; // 'local' | 'sheets'
+
+function saveApiUrl() {
+  gsApiUrl = document.getElementById('gs-api-url').value.trim();
+  localStorage.setItem(GS_API_KEY, gsApiUrl);
+}
+
+function setGsStatus(status, msg) {
+  // status: 'ok' | 'error' | 'loading' | 'idle'
+  const dot  = document.getElementById('gs-dot');
+  const text = document.getElementById('gs-status-text');
+  if (!dot || !text) return;
+  dot.className  = 'gs-status-dot gs-dot-' + (status === 'ok' ? 'ok' : status === 'error' ? 'err' : status === 'loading' ? 'loading' : 'idle');
+  text.textContent = msg;
+}
+
+function setGsBanner(type, msg) {
+  const el = document.getElementById('gs-status-banner');
+  if (!el) return;
+  el.innerHTML = msg
+    ? `<div class="gs-banner ${type === 'error' ? 'error' : type === 'warn' ? 'warn' : ''}" style="margin-bottom:18px">
+        <div>
+          <div style="font-weight:700;font-size:14px">${type === 'ok' ? '✅' : type === 'error' ? '❌' : '⚠️'} ${msg}</div>
+        </div>
+       </div>`
+    : '';
+}
+
+async function gsGet(sheet) {
+  if (!gsApiUrl) throw new Error('No API URL configured');
+  const url = `${gsApiUrl}?sheet=${sheet}&t=${Date.now()}`;
+  const res = await fetch(url, { method: 'GET' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error);
+  return json;
+}
+
+async function gsPost(sheet, action, data, keyField, keyField2) {
+  if (!gsApiUrl) throw new Error('No API URL configured');
+  const body = { sheet, action, data };
+  if (keyField)  body.keyField  = keyField;
+  if (keyField2) body.keyField2 = keyField2;
+  const res = await fetch(gsApiUrl, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'text/plain' } // avoid CORS preflight
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(json.error);
+  return json;
+}
+
+async function testConnection() {
+  const url = document.getElementById('gs-api-url').value.trim();
+  if (!url) { setGsBanner('warn', 'Please paste your Apps Script Web App URL first.'); return; }
+  gsApiUrl = url;
+  localStorage.setItem(GS_API_KEY, url);
+  setGsStatus('loading', 'Testing connection…');
+  setGsBanner('', '');
+  try {
+    const data = await gsGet('participants');
+    const count = Array.isArray(data) ? data.length : 0;
+    setGsStatus('ok', `Connected ✓ — ${count} participants in Sheet`);
+    setGsBanner('ok', `Google Sheets connected! ${count} participant${count !== 1 ? 's' : ''} found. Click "Sync Now" to load data.`);
+    updateConnBadge(true);
+  } catch (err) {
+    setGsStatus('error', 'Connection failed: ' + err.message);
+    setGsBanner('error', 'Connection failed — ' + err.message + '. Make sure the Apps Script is deployed as Web App with access "Anyone".');
+    updateConnBadge(false);
+  }
+}
+
+function updateConnBadge(connected) {
+  const badge = document.getElementById('gs-conn-badge');
+  const dashBadge = document.getElementById('dash-source-badge');
+  const syncBtn = document.getElementById('dash-sync-btn');
+  if (badge) {
+    badge.className = 'source-badge ' + (connected ? 'sb-sheets' : 'sb-local');
+    badge.textContent = connected ? '🟢 Google Sheets' : '📂 Local Storage';
+  }
+  if (dashBadge) {
+    dashBadge.className = 'source-badge ' + (connected ? 'sb-sheets' : 'sb-local');
+    dashBadge.textContent = connected ? '🟢 Google Sheets Live' : '📂 Local Data';
+  }
+  if (syncBtn) syncBtn.style.display = connected ? 'inline-flex' : 'none';
+  dataSource = connected ? 'sheets' : 'local';
+}
+
+async function syncFromSheets() {
+  if (!gsApiUrl) {
+    alert('No API URL configured. Go to Admin → Data Tools → paste your Apps Script URL.');
+    return;
+  }
+  const syncBtn = document.getElementById('sync-btn');
+  const dashBtn = document.getElementById('dash-sync-btn');
+  const origText = syncBtn?.textContent || '🔄 Sync Now';
+  if (syncBtn) syncBtn.innerHTML = '<span class="refresh-spin">🔄</span> Syncing…';
+  if (dashBtn) dashBtn.innerHTML = '<span class="refresh-spin">🔄</span>';
+  setGsStatus('loading', 'Syncing from Google Sheets…');
+
+  try {
+    // Fetch all sheets in parallel
+    const [participants, entries, proofs, events, teamsRaw] = await Promise.all([
+      gsGet('participants').catch(() => null),
+      gsGet('entries').catch(() => null),
+      gsGet('proofs').catch(() => null),
+      gsGet('events').catch(() => null),
+      gsGet('teams').catch(() => null),
+    ]);
+
+    let synced = [];
+
+    if (Array.isArray(participants) && participants.length > 0) {
+      // Normalise types
+      const clean = participants.map(p => ({
+        activity_id:   String(p.activity_id || '').trim(),
+        email:         String(p.email || '').trim().toLowerCase(),
+        first_name:    String(p.first_name || '').trim(),
+        last_name:     String(p.last_name || '').trim(),
+        nickname:      String(p.nickname || '').trim(),
+        gender:        String(p.gender || '').trim(),
+        age_group:     String(p.age_group || '').trim(),
+        team:          String(p.team || '').trim(),
+        register_date: String(p.register_date || '').trim(),
+      })).filter(p => p.activity_id && p.nickname);
+      save(KEYS.participants, clean);
+      synced.push(`${clean.length} participants`);
+    }
+
+    if (Array.isArray(entries) && entries.length > 0) {
+      const clean = entries.map(e => ({
+        activity_id:      String(e.activity_id || '').trim(),
+        date:             String(e.date || '').trim(),
+        burn_kcal:        parseFloat(e.burn_kcal) || 0,
+        sleep_hr:         parseFloat(e.sleep_hr) || 0,
+        week_id:          String(e.week_id || getWeekId(e.date)).trim(),
+        submit_timestamp: String(e.submit_timestamp || new Date().toISOString()),
+      })).filter(e => e.activity_id && e.date);
+      save(KEYS.entries, clean);
+      synced.push(`${clean.length} entries`);
+    }
+
+    if (Array.isArray(proofs) && proofs.length > 0) {
+      const clean = proofs.map(p => ({
+        activity_id:       String(p.activity_id || '').trim(),
+        week_id:           String(p.week_id || '').trim(),
+        combined:          String(p.combined || '').toLowerCase() === 'true',
+        proof_submit_date: String(p.proof_submit_date || '').trim(),
+        notes:             String(p.notes || '').trim(),
+        burn_proof:        null,
+        bed_proof:         null,
+      })).filter(p => p.activity_id && p.week_id);
+      save(KEYS.proofs, clean);
+      synced.push(`${clean.length} proofs`);
+    }
+
+    if (Array.isArray(events) && events.length > 0) {
+      const clean = events.map(ev => ({
+        id:           parseInt(ev.id) || Date.now(),
+        name:         String(ev.name || '').trim(),
+        metric:       String(ev.metric || 'burn').trim(),
+        multiplier:   parseFloat(ev.multiplier) || 1,
+        target:       String(ev.target || 'all').trim(),
+        start_date:   String(ev.start_date || '').trim(),
+        end_date:     String(ev.end_date || '').trim(),
+        banner_text:  String(ev.banner_text || ev.name || '').trim(),
+        created:      String(ev.created || today()).trim(),
+      })).filter(ev => ev.name && ev.start_date && ev.end_date);
+      save(KEYS.events, clean);
+      synced.push(`${clean.length} events`);
+    }
+
+    if (Array.isArray(teamsRaw) && teamsRaw.length > 0) {
+      const teamNames = teamsRaw.map(t => String(t.name || t).trim()).filter(Boolean);
+      if (teamNames.length > 0) {
+        save(KEYS.teams, teamNames);
+        synced.push(`${teamNames.length} teams`);
+      }
+    }
+
+    const now = new Date().toLocaleTimeString('th-TH');
+    const msg = `Synced: ${synced.join(', ')}`;
+    setGsStatus('ok', `Last sync: ${now}`);
+    const lastSyncEl = document.getElementById('gs-last-sync');
+    if (lastSyncEl) lastSyncEl.textContent = `✅ ${msg} — ${now}`;
+    updateConnBadge(true);
+
+    // Refresh all views
+    populateTeamSelect();
+    populateEventTargets();
+    renderDashboard();
+    renderAdminSearch();
+    renderParticipantList();
+
+  } catch (err) {
+    setGsStatus('error', 'Sync failed: ' + err.message);
+    console.error('Sync error:', err);
+    setGsBanner('error', 'Sync failed: ' + err.message);
+  } finally {
+    if (syncBtn) syncBtn.textContent = origText;
+    if (dashBtn) dashBtn.textContent = '🔄 Sync';
+  }
+}
+
+// ── Write-back: push a single entry to Google Sheets ──────────
+async function pushToSheets(sheet, data, keyField, keyField2) {
+  if (!gsApiUrl || dataSource !== 'sheets') return; // silently skip if not connected
+  try {
+    await gsPost(sheet, 'upsert', data, keyField, keyField2);
+  } catch (err) {
+    console.warn('Push to Sheets failed (will keep local):', err.message);
+  }
+}
+
+// ── Auto-refresh toggle ────────────────────────────────────────
+function toggleAutoRefresh() {
+  const btn = document.getElementById('auto-refresh-btn');
+  if (autoRefreshEnabled) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshEnabled = false;
+    if (btn) btn.textContent = '⏱️ Auto-refresh: OFF';
+  } else {
+    if (!gsApiUrl) { alert('Connect to Google Sheets first.'); return; }
+    autoRefreshEnabled = true;
+    if (btn) btn.textContent = '⏱️ Auto-refresh: ON (5m)';
+    autoRefreshTimer = setInterval(syncFromSheets, 5 * 60 * 1000);
+    syncFromSheets(); // immediate sync
+  }
+}
+
+// ── Download Apps Script file ──────────────────────────────────
+function downloadAppsScript() {
+  const code = getAppsScriptCode();
+  const blob = new Blob([code], { type: 'text/javascript' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'Code.gs';
+  a.click();
+}
+
+function getAppsScriptCode() {
+  return `// ============================================================
+// RPT Burn & Bed — Google Apps Script (Code.gs)
+// 1. Open Google Sheet → Extensions → Apps Script
+// 2. Replace all code with this file
+// 3. Run setupSheets() once to create tabs
+// 4. Deploy → New Deployment → Web App
+//    Execute as: Me | Who has access: Anyone
+// 5. Copy the Web App URL to the Dashboard
+// ============================================================
+
+const SHEET_NAMES = {
+  participants: 'participants',
+  entries:      'entries',
+  proofs:       'proofs',
+  events:       'events',
+  teams:        'teams'
+};
+
+function doGet(e) {
+  try {
+    const sheet = e.parameter && e.parameter.sheet;
+    if (!sheet || !SHEET_NAMES[sheet]) {
+      return jsonResponse({ error: 'Invalid sheet', valid: Object.keys(SHEET_NAMES) });
+    }
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss.getSheetByName(SHEET_NAMES[sheet]);
+    if (!sh) return jsonResponse({ error: 'Sheet not found: ' + sheet });
+    const data = sh.getDataRange().getValues();
+    if (data.length < 2) return jsonResponse([]);
+    const headers = data[0].map(h => String(h).trim());
+    const rows = data.slice(1)
+      .filter(row => row.some(c => c !== '' && c !== null))
+      .map(row => {
+        const obj = {};
+        headers.forEach((h, i) => {
+          let v = row[i];
+          if (v instanceof Date) v = Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+          obj[h] = v;
+        });
+        return obj;
+      });
+    return jsonResponse(rows);
+  } catch (err) {
+    return jsonResponse({ error: err.message });
+  }
+}
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    const { sheet, action, data } = payload;
+    if (!sheet || !SHEET_NAMES[sheet]) return jsonResponse({ error: 'Invalid sheet' });
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sh = ss.getSheetByName(SHEET_NAMES[sheet]);
+    if (!sh) {
+      sh = ss.insertSheet(SHEET_NAMES[sheet]);
+      sh.appendRow(getDefaultHeaders(sheet));
+    }
+    if (action === 'append') {
+      const headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+      sh.appendRow(headers.map(h => data[h] !== undefined ? data[h] : ''));
+      return jsonResponse({ status:'ok', action:'appended' });
+    }
+    if (action === 'upsert') {
+      const kf  = payload.keyField  || 'activity_id';
+      const kf2 = payload.keyField2 || null;
+      const kv  = data[kf], kv2 = kf2 ? data[kf2] : null;
+      const all = sh.getDataRange().getValues();
+      const h   = all[0];
+      const ki  = h.indexOf(kf), ki2 = kf2 ? h.indexOf(kf2) : -1;
+      let matchRow = -1;
+      for (let i = 1; i < all.length; i++) {
+        if (String(all[i][ki]) === String(kv) && (ki2 < 0 || String(all[i][ki2]) === String(kv2))) {
+          matchRow = i + 1; break;
+        }
+      }
+      const newRow = h.map(col => data[col] !== undefined ? data[col] : '');
+      if (matchRow > 0) {
+        sh.getRange(matchRow, 1, 1, newRow.length).setValues([newRow]);
+        return jsonResponse({ status:'ok', action:'updated' });
+      } else {
+        sh.appendRow(newRow);
+        return jsonResponse({ status:'ok', action:'appended' });
+      }
+    }
+    if (action === 'delete') {
+      const kf = payload.keyField || 'id';
+      const kv = data[kf];
+      const all = sh.getDataRange().getValues();
+      const ki  = all[0].indexOf(kf);
+      for (let i = all.length - 1; i >= 1; i--) {
+        if (String(all[i][ki]) === String(kv)) { sh.deleteRow(i+1); return jsonResponse({status:'ok'}); }
+      }
+      return jsonResponse({ status:'notfound' });
+    }
+    return jsonResponse({ error: 'Unknown action' });
+  } catch (err) {
+    return jsonResponse({ error: err.message });
+  }
+}
+
+function jsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function getDefaultHeaders(sheet) {
+  return {
+    participants: ['activity_id','email','first_name','last_name','nickname','gender','age_group','team','register_date'],
+    entries:      ['activity_id','date','burn_kcal','sleep_hr','week_id','submit_timestamp'],
+    proofs:       ['activity_id','week_id','combined','proof_submit_date','notes'],
+    events:       ['id','name','metric','multiplier','target','start_date','end_date','banner_text','created'],
+    teams:        ['name','active']
+  }[sheet] || [];
+}
+
+function setupSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const allH = {
+    participants: ['activity_id','email','first_name','last_name','nickname','gender','age_group','team','register_date'],
+    entries:      ['activity_id','date','burn_kcal','sleep_hr','week_id','submit_timestamp'],
+    proofs:       ['activity_id','week_id','combined','proof_submit_date','notes'],
+    events:       ['id','name','metric','multiplier','target','start_date','end_date','banner_text','created'],
+    teams:        ['name','active']
+  };
+  Object.entries(allH).forEach(([name, headers]) => {
+    let sh = ss.getSheetByName(name);
+    if (!sh) sh = ss.insertSheet(name);
+    if (sh.getLastRow() === 0) {
+      sh.appendRow(headers);
+      sh.getRange(1,1,1,headers.length).setBackground('#1a1714').setFontColor('#ffffff').setFontWeight('bold');
+      sh.setFrozenRows(1);
+    }
+  });
+  const teamSh = ss.getSheetByName('teams');
+  if (teamSh.getLastRow() <= 1) {
+    ['Engineering','QA','Operation','Process Tech','HR','Finance','Sales','Marketing','IT','Management']
+      .forEach(t => teamSh.appendRow([t, true]));
+  }
+  SpreadsheetApp.getUi().alert('✅ Setup complete! All sheets created.');
+}`;
+}
+
+</script>
+</head>
+<body>
+
+<header class="top-header">
+  <div class="logo">
+    <span class="rpt">RPT</span>
+    <span class="burn-part">BURN</span>
+    <span class="amp">&amp;</span>
+    <span class="bed-part">BED</span>
+  </div>
+  <div class="header-right">
+    <div id="hdr-event-pill"></div>
+    <button class="tv-btn" onclick="enterTVMode()">📺 TV Mode</button>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <div class="nav-tab active" onclick="switchModule('register')" data-mod="register">✍️ Register</div>
+  <div class="nav-tab" onclick="switchModule('entry')" data-mod="entry">📊 Daily Entry</div>
+  <div class="nav-tab" onclick="switchModule('proof')" data-mod="proof">📸 Weekly Proof</div>
+  <div class="nav-tab" onclick="switchModule('dashboard')" data-mod="dashboard">🏆 Dashboard</div>
+  <div class="nav-tab" onclick="switchModule('events')" data-mod="events">⚡ Events</div>
+  <div class="nav-tab" onclick="switchModule('admin')" data-mod="admin">🔐 Admin</div>
+</nav>
+
+<nav class="bottom-nav">
+  <button class="bn-item active" onclick="switchModule('register')" data-bn="register"><span class="bn-icon">✍️</span>Register</button>
+  <button class="bn-item" onclick="switchModule('entry')" data-bn="entry"><span class="bn-icon">📊</span>Entry</button>
+  <button class="bn-item" onclick="switchModule('proof')" data-bn="proof"><span class="bn-icon">📸</span>Proof</button>
+  <button class="bn-item" onclick="switchModule('dashboard')" data-bn="dashboard"><span class="bn-icon">🏆</span>Board</button>
+  <button class="bn-item" onclick="switchModule('events')" data-bn="events"><span class="bn-icon">⚡</span>Events</button>
+  <button class="bn-item" onclick="switchModule('admin')" data-bn="admin"><span class="bn-icon">🔐</span>Admin</button>
+</nav>
+
+<div class="main">
+<!-- ============ MODULE 1: REGISTER ============ -->
+<div id="module-register" class="module active">
+  <div class="module-header">
+    <div class="module-title">REGISTER</div>
+    <div class="module-subtitle">Join the RPT Burn &amp; Bed Challenge</div>
+  </div>
+  <div class="inner-tabs" id="reg-tabs">
+    <div class="inner-tab active" onclick="switchInner(this,'reg-form','reg-tabs')">📝 Registration Form</div>
+    <div class="inner-tab" onclick="switchInner(this,'reg-lookup','reg-tabs');renderLookup()">🔍 Lookup My ID</div>
+    <div class="inner-tab" onclick="switchInner(this,'reg-list','reg-tabs');renderParticipantList()">👥 Participants</div>
+  </div>
+
+  <div id="reg-form" class="inner-panel active">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">New Participant</div>
+        <div id="reg-alert"></div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">First Name *</label><input class="form-input" id="reg-firstname" placeholder="First name"></div>
+          <div class="form-group"><label class="form-label">Last Name *</label><input class="form-input" id="reg-lastname" placeholder="Last name"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Employee Email *</label>
+          <input class="form-input" id="reg-email" type="email" placeholder="firstname.l@rpt.com">
+          <div class="form-hint">Admin/reward only — not shown publicly</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nickname * <span style="color:var(--text3);font-weight:400;text-transform:none">(shown on leaderboard)</span></label>
+          <input class="form-input" id="reg-nickname" placeholder="Your cool nickname">
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Gender</label>
+            <select class="form-select" id="reg-gender">
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Prefer not to say</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Age Group</label>
+            <select class="form-select" id="reg-age">
+              <option value="">Select</option>
+              <option value="Under 40">&lt; 40 yr</option>
+              <option value="40 and above">≥ 40 yr</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Team / Unit *</label>
+          <select class="form-select" id="reg-team"><option value="">Select team</option></select>
+        </div>
+        <button class="btn btn-primary" onclick="registerParticipant()" style="width:100%;margin-top:4px">✍️ Register Now</button>
+      </div>
+      <div>
+        <div id="reg-success-card" style="display:none;margin-bottom:16px">
+          <div class="card" style="border:1px solid rgba(0,230,118,.4);box-shadow:0 0 24px rgba(0,230,118,.1)">
+            <div class="card-title" style="color:var(--green2)">🎉 Registration Successful!</div>
+            <div id="reg-success-msg"></div>
+            <div class="aid-badge"><div><div class="aid-label">Your Activity ID</div><div class="aid-value" id="reg-id-display">—</div></div><span style="font-size:32px">🔥</span></div>
+            <div style="margin-top:12px;font-size:12px;color:var(--text3);line-height:1.7">Save this ID — you'll use it every time you log activity.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📋 How It Works</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.9">
+            <p>🔥 <strong>Burn</strong> — Log calories burned each day (kcal)</p>
+            <p>😴 <strong>Bed</strong> — Log sleep hours each night (hr)</p>
+            <div class="sep"></div>
+            <p>📸 Submit weekly proof once per week</p>
+            <p>📊 Dashboard shows live rankings &amp; fun insights</p>
+            <div class="sep"></div>
+            <p style="color:var(--text3)">⚠️ Organizer reserves right to review data before rewards</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="reg-lookup" class="inner-panel">
+    <div class="card" style="max-width:560px">
+      <div class="card-title">🔍 Find Your Activity ID</div>
+      <div class="alert alert-info" style="font-size:12px">Enter your email or nickname to retrieve your Activity ID</div>
+      <div class="form-group"><label class="form-label">Search by Email or Nickname</label>
+        <input class="form-input" id="lookup-input" placeholder="e.g. moss or moss.t@rpt.com" oninput="renderLookup()">
+      </div>
+      <div id="lookup-results"></div>
+    </div>
+  </div>
+
+  <div id="reg-list" class="inner-panel">
+    <div class="card">
+      <div class="card-title">All Registered Participants</div>
+      <div class="search-row"><input class="search-input" id="reg-search" placeholder="Filter by name, team, ID..." oninput="renderParticipantList()"></div>
+      <div class="dtw" id="participant-list-table"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODULE 2: DAILY ENTRY ============ -->
+<div id="module-entry" class="module">
+  <div class="module-header">
+    <div class="module-title"><span class="title-burn">DAILY</span> ENTRY</div>
+    <div class="module-subtitle">Log your Burn &amp; Bed activity</div>
+  </div>
+  <div class="inner-tabs" id="entry-tabs">
+    <div class="inner-tab active" onclick="switchInner(this,'entry-single','entry-tabs')">Single Day</div>
+    <div class="inner-tab" onclick="switchInner(this,'entry-batch','entry-tabs')">Batch (Multi-day)</div>
+    <div class="inner-tab" onclick="switchInner(this,'entry-history','entry-tabs');renderHistory()">My History</div>
+  </div>
+
+  <div id="entry-single" class="inner-panel active">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Log Activity</div>
+        <div id="entry-alert"></div>
+        <div class="form-group">
+          <label class="form-label">Search Participant</label>
+          <div class="ac-wrap">
+            <input class="form-input" id="en-ac-inp" placeholder="Type ID or nickname..." autocomplete="off"
+              oninput="acSearch('en-ac-inp','en-ac-res','en-aid','en-ac-info')"
+              onkeydown="acKeyNav(event,'en-ac-res','en-ac-inp','en-aid','en-ac-info')">
+            <div class="ac-results" id="en-ac-res"></div>
+          </div>
+          <input type="hidden" id="en-aid">
+          <div id="en-ac-info" style="margin-top:7px;font-size:12px;color:var(--text3)"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Date</label><input class="form-input" id="entry-date" type="date"></div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">🔥 Burn (kcal)</label>
+            <input class="form-input" id="entry-burn" type="number" min="0" max="5000" placeholder="e.g. 450">
+            <div class="form-hint">0 = rest day</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">😴 Bed (hr)</label>
+            <input class="form-input" id="entry-sleep" type="number" min="0" max="24" step="0.5" placeholder="e.g. 7.5">
+            <div class="form-hint">0–14 hr</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSingleEntry()" style="width:100%">💾 Save Entry</button>
+      </div>
+      <div class="card">
+        <div class="card-title">This Week Summary</div>
+        <div id="entry-week-summary"><div class="empty-state"><div class="icon">📊</div>Search &amp; select a participant</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="entry-batch" class="inner-panel">
+    <div class="card">
+      <div class="card-title">Batch Entry — Multiple Days</div>
+      <div id="batch-alert"></div>
+      <div class="form-group" style="max-width:420px">
+        <label class="form-label">Participant</label>
+        <div class="ac-wrap">
+          <input class="form-input" id="ba-ac-inp" placeholder="Type ID or nickname..." autocomplete="off"
+            oninput="acSearch('ba-ac-inp','ba-ac-res','ba-aid','ba-ac-info')"
+            onkeydown="acKeyNav(event,'ba-ac-res','ba-ac-inp','ba-aid','ba-ac-info')">
+          <div class="ac-results" id="ba-ac-res"></div>
+        </div>
+        <input type="hidden" id="ba-aid">
+        <div id="ba-ac-info" style="margin-top:6px;font-size:12px;color:var(--text3)"></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;min-width:480px">
+          <thead><tr>
+            <th style="text-align:left;padding:8px 12px;font-size:10px;letter-spacing:2px;color:var(--text3);border-bottom:1px solid var(--border)">DATE</th>
+            <th style="text-align:left;padding:8px 12px;font-size:10px;letter-spacing:2px;color:var(--burn);border-bottom:1px solid var(--border)">🔥 BURN (kcal)</th>
+            <th style="text-align:left;padding:8px 12px;font-size:10px;letter-spacing:2px;color:var(--bed);border-bottom:1px solid var(--border)">😴 BED (hr)</th>
+            <th style="border-bottom:1px solid var(--border)"></th>
+          </tr></thead>
+          <tbody id="batch-rows"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn btn-secondary btn-sm" onclick="addBatchRow()">+ Add Day</button>
+        <button class="btn btn-primary" onclick="saveBatchEntries()">💾 Save All</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="entry-history" class="inner-panel">
+    <div class="card">
+      <div class="card-title">Activity History</div>
+      <div class="form-group" style="max-width:380px">
+        <div class="ac-wrap">
+          <input class="form-input" id="hi-ac-inp" placeholder="Type ID or nickname..." autocomplete="off"
+            oninput="acSearch('hi-ac-inp','hi-ac-res','hi-aid','hi-ac-info');renderHistory()"
+            onkeydown="acKeyNav(event,'hi-ac-res','hi-ac-inp','hi-aid','hi-ac-info')">
+          <div class="ac-results" id="hi-ac-res"></div>
+        </div>
+        <input type="hidden" id="hi-aid">
+        <div id="hi-ac-info" style="margin-top:6px;font-size:12px;color:var(--text3)"></div>
+      </div>
+      <div class="dtw" id="history-table"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODULE 3: WEEKLY PROOF ============ -->
+<div id="module-proof" class="module">
+  <div class="module-header">
+    <div class="module-title">WEEKLY <span class="title-bed">PROOF</span></div>
+    <div class="module-subtitle">Submit weekly evidence images</div>
+  </div>
+  <div class="inner-tabs" id="proof-tabs">
+    <div class="inner-tab active" onclick="switchInner(this,'proof-submit','proof-tabs')">📤 Submit</div>
+    <div class="inner-tab" onclick="switchInner(this,'proof-all','proof-tabs');renderProofList()">📋 History</div>
+  </div>
+
+  <div id="proof-submit" class="inner-panel active">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Weekly Proof Submission</div>
+        <div id="proof-alert"></div>
+        <div class="alert alert-info" style="font-size:12px">📸 Submit once per week. One screenshot can cover both metrics.</div>
+        <div class="form-group">
+          <label class="form-label">Participant</label>
+          <div class="ac-wrap">
+            <input class="form-input" id="pr-ac-inp" placeholder="Type ID or nickname..." autocomplete="off"
+              oninput="acSearch('pr-ac-inp','pr-ac-res','pr-aid','pr-ac-info')"
+              onkeydown="acKeyNav(event,'pr-ac-res','pr-ac-inp','pr-aid','pr-ac-info')">
+            <div class="ac-results" id="pr-ac-res"></div>
+          </div>
+          <input type="hidden" id="pr-aid">
+          <div id="pr-ac-info" style="margin-top:6px;font-size:12px;color:var(--text3)"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Week</label><select class="form-select" id="proof-week"></select></div>
+        <div class="form-group">
+          <label class="form-label">🔥 Burn Proof</label>
+          <div class="upload-zone" onclick="document.getElementById('pf-burn').click()">
+            <input type="file" id="pf-burn" accept="image/*" onchange="handleUpload('burn',this)">
+            <div style="font-size:28px">📷</div>
+            <div style="font-size:12px;margin-top:6px">Click to upload exercise screenshot</div>
+            <div id="pv-burn"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">😴 Bed Proof</label>
+          <div class="upload-zone" onclick="document.getElementById('pf-bed').click()">
+            <input type="file" id="pf-bed" accept="image/*" onchange="handleUpload('bed',this)">
+            <div style="font-size:28px">📷</div>
+            <div style="font-size:12px;margin-top:6px">Click to upload sleep tracker screenshot</div>
+            <div id="pv-bed"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="proof-combined" style="width:16px;height:16px;accent-color:var(--burn)">
+            One image covers both Burn &amp; Bed
+          </label>
+        </div>
+        <button class="btn btn-primary" onclick="saveProof()" style="width:100%">📤 Submit Proof</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent Submissions</div>
+        <div id="proof-recent"><div class="empty-state"><div class="icon">📸</div>No proof yet</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="proof-all" class="inner-panel">
+    <div class="card">
+      <div class="card-title">All Proof Submissions</div>
+      <div id="proof-all-list"><div class="empty-state"><div class="icon">📸</div>No proof yet</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODULE 4: DASHBOARD ============ -->
+<div id="module-dashboard" class="module">
+  <div class="module-header" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div>
+      <div class="module-title">🏆 <span class="title-burn">DASH</span><span class="title-bed">BOARD</span></div>
+      <div class="module-subtitle">Live energy rankings &amp; challenge insights</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding-bottom:6px">
+      <span id="dash-source-badge" class="source-badge sb-local">📂 Local Data</span>
+      <button class="btn btn-secondary btn-sm" onclick="syncFromSheets()" id="dash-sync-btn" style="display:none">🔄 Sync</button>
+    </div>
+  </div>
+  <div id="dash-event-banner"></div>
+  <div class="grid-3" style="margin-bottom:20px">
+    <div class="stat-card s-green"><div class="stat-glow" style="background:var(--green)"></div>
+      <div class="stat-label">Challengers</div><div class="stat-value sv-green" id="d-total-p">0</div><div class="stat-sub">registered</div></div>
+    <div class="stat-card s-burn"><div class="stat-glow" style="background:var(--burn)"></div>
+      <div class="stat-label">🔥 Total Burn</div><div class="stat-value sv-burn" id="d-total-burn">0</div><div class="stat-sub">kcal logged</div></div>
+    <div class="stat-card s-bed"><div class="stat-glow" style="background:var(--bed)"></div>
+      <div class="stat-label">😴 Total Bed</div><div class="stat-value sv-bed" id="d-total-sleep">0</div><div class="stat-sub">hours logged</div></div>
+  </div>
+  <div class="inner-tabs" id="dash-tabs">
+    <div class="inner-tab active" onclick="switchInner(this,'dash-lb','dash-tabs')">🏅 Leaderboards</div>
+    <div class="inner-tab" onclick="switchInner(this,'dash-teams','dash-tabs')">🚀 Team Ranking</div>
+    <div class="inner-tab" onclick="switchInner(this,'dash-energy','dash-tabs')">⚡ Live Energy</div>
+    <div class="inner-tab" onclick="switchInner(this,'dash-personal','dash-tabs')">👤 Personal</div>
+  </div>
+
+  <div id="dash-lb" class="inner-panel active">
+    <div class="grid-2">
+      <div class="card"><div class="card-title" style="color:var(--burn)">🔥 TOP 10 BURN — Individual</div><div id="lb-burn"></div></div>
+      <div class="card"><div class="card-title" style="color:var(--bed)">😴 TOP 10 BED — Individual</div><div id="lb-bed"></div></div>
+    </div>
+  </div>
+
+  <div id="dash-teams" class="inner-panel">
+    <div class="grid-2">
+      <div class="card"><div class="card-title" style="color:var(--burn)">🔥 Team Burn (avg/head)</div><div id="team-burn"></div></div>
+      <div class="card"><div class="card-title" style="color:var(--bed)">😴 Team Bed (avg/head)</div><div id="team-bed"></div></div>
+    </div>
+  </div>
+
+  <!-- LIVE ENERGY — full fun section -->
+  <div id="dash-energy" class="inner-panel">
+    <div class="grid-2" style="margin-bottom:18px">
+      <div class="fun-widget wm" id="fw-momentum">
+        <div class="fw-title"><span class="fw-badge">🔥</span> มาแรง — Hot Right Now</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:-10px;margin-bottom:12px">เทียบ 3 วันล่าสุด vs ค่าเฉลี่ยก่อนหน้า</div>
+        <div id="fw-momentum-list"></div>
+      </div>
+      <div class="fun-widget wt" id="fw-team-momentum">
+        <div class="fw-title"><span class="fw-badge">🚀</span> Team Momentum — ทีมกำลังพุ่ง</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:-10px;margin-bottom:12px">ดู avg/team ใน 3 วันล่าสุด</div>
+        <div id="fw-team-momentum-list"></div>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-bottom:18px">
+      <div class="fun-widget wf" id="fw-feed">
+        <div class="fw-title"><span class="fw-badge">⚡</span> วันนี้เกิดอะไรขึ้น? — Daily Highlights</div>
+        <div id="fw-feed-list"></div>
+      </div>
+      <div class="fun-widget wr" id="fw-race">
+        <div class="fw-title"><span class="fw-badge">🏁</span> Race to 10,000 kcal — ใครจะถึงก่อน?</div>
+        <div id="fw-race-list"></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="fun-widget wc" id="fw-comeback">
+        <div class="fw-title"><span class="fw-badge">💥</span> Comeback of the Week — พลิกเกม</div>
+        <div id="fw-comeback-list"></div>
+      </div>
+      <div class="fun-widget wb" id="fw-badges">
+        <div class="fw-title"><span class="fw-badge">🏅</span> Fun Badges — This Week's Stars</div>
+        <div id="fw-badges-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dash-personal" class="inner-panel">
+    <div class="form-group" style="max-width:380px;margin-bottom:20px">
+      <div class="ac-wrap">
+        <input class="form-input" id="pe-ac-inp" placeholder="Type ID or nickname..." autocomplete="off"
+          oninput="acSearch('pe-ac-inp','pe-ac-res','pe-aid','pe-ac-info');renderPersonalDash()"
+          onkeydown="acKeyNav(event,'pe-ac-res','pe-ac-inp','pe-aid','pe-ac-info')">
+        <div class="ac-results" id="pe-ac-res"></div>
+      </div>
+      <input type="hidden" id="pe-aid">
+      <div id="pe-ac-info" style="margin-top:6px;font-size:12px;color:var(--text3)"></div>
+    </div>
+    <div id="personal-content"><div class="empty-state"><div class="icon">👤</div>Search a participant above</div></div>
+  </div>
+</div>
+
+<!-- ============ MODULE 5: EVENTS ============ -->
+<div id="module-events" class="module">
+  <div class="module-header">
+    <div class="module-title">⚡ EVENTS</div>
+    <div class="module-subtitle">Create challenge modifiers &amp; campaign boosters</div>
+  </div>
+  <div class="inner-tabs" id="event-tabs">
+    <div class="inner-tab active" onclick="switchInner(this,'ev-create','event-tabs')">Create Event</div>
+    <div class="inner-tab" onclick="switchInner(this,'ev-list','event-tabs');renderEventsList()">All Events</div>
+  </div>
+
+  <div id="ev-create" class="inner-panel active">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">New Event</div>
+        <div id="event-alert"></div>
+        <div class="form-group"><label class="form-label">Event Name *</label><input class="form-input" id="ev-name" placeholder="e.g. 🔥 Burn Boost Week"></div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Metric</label><select class="form-select" id="ev-metric"><option value="burn">🔥 Burn</option><option value="bed">😴 Bed</option><option value="both">Both</option></select></div>
+          <div class="form-group"><label class="form-label">Multiplier</label><select class="form-select" id="ev-mult"><option value="1.5">× 1.5</option><option value="2" selected>× 2</option><option value="3">× 3</option><option value="0.5">× 0.5 (penalty)</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Target Group</label><select class="form-select" id="ev-target"><option value="all">All Participants</option><option value="last_team">Last Rank Team (auto)</option></select></div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Start Date</label><input class="form-input" id="ev-start" type="date"></div>
+          <div class="form-group"><label class="form-label">End Date</label><input class="form-input" id="ev-end" type="date"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Dashboard Banner Text</label><input class="form-input" id="ev-banner" placeholder="🔥 BURN WEEK — Calories ×2 this week!"></div>
+        <button class="btn btn-primary" onclick="createEvent()" style="width:100%">⚡ Create Event</button>
+      </div>
+      <div class="card">
+        <div class="card-title">How Events Work</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.9">
+          <p>• <strong>Adjusted Score = raw × multiplier</strong></p>
+          <p>• Applies only within the selected date range</p>
+          <p>• Dashboard leaderboards show adjusted values</p>
+          <p>• Banner auto-appears on dashboard during event</p>
+          <p>• "Last Rank Team" dynamically resolves at runtime</p>
+          <div class="sep"></div>
+          <p style="color:var(--text3)">Toggle via <code style="background:var(--bg3);padding:2px 6px;border-radius:4px">FEATURES.eventSystem</code></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ev-list" class="inner-panel">
+    <div class="card"><div class="card-title">All Events</div><div id="events-table"></div></div>
+  </div>
+</div>
+
+<!-- ============ MODULE 6: ADMIN ============ -->
+<div id="module-admin" class="module">
+  <div class="module-header">
+    <div class="module-title">🔐 ADMIN</div>
+    <div class="module-subtitle">Search, screen, reward &amp; manage</div>
+  </div>
+  <div class="inner-tabs" id="admin-tabs">
+    <div class="inner-tab active" onclick="switchInner(this,'adm-search','admin-tabs');renderAdminSearch()">🔍 Search</div>
+    <div class="inner-tab" onclick="switchInner(this,'adm-screen','admin-tabs');renderScreening()">🛡️ Screening</div>
+    <div class="inner-tab" onclick="switchInner(this,'adm-rewards','admin-tabs');renderRewards()">🏆 Rewards</div>
+    <div class="inner-tab" onclick="switchInner(this,'adm-teams','admin-tabs');renderTeamManage()">🗂️ Teams</div>
+    <div class="inner-tab" onclick="switchInner(this,'adm-data','admin-tabs')">💾 Data</div>
+  </div>
+
+  <div id="adm-search" class="inner-panel active">
+    <div class="card">
+      <div class="card-title">Participant Search</div>
+      <div class="search-row"><input class="search-input" id="adm-q" placeholder="Search Activity ID, email, nickname, team..." oninput="renderAdminSearch()"></div>
+      <div class="dtw" id="adm-search-results"></div>
+    </div>
+    <div id="adm-detail-panel" style="display:none"><div class="detail-panel" id="adm-detail-content"></div></div>
+  </div>
+
+  <div id="adm-screen" class="inner-panel">
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-title">🛡️ Anomaly Screening — Internal Only</div>
+      <div class="alert alert-warn" style="font-size:12px;margin-bottom:16px">⚠️ Flags are for review only — not automatic disqualification.</div>
+      <div class="dtw" id="screening-table"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Thresholds</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.9">
+        <p>🔥 Burn &gt; 3,000 kcal/day → Flag</p>
+        <p>😴 Sleep &gt; 13 hr or &lt; 2 hr (when logged) → Flag</p>
+        <p>🔁 5+ consecutive identical values → Flag</p>
+        <p>🗓️ 7+ entries submitted far past their dates → Flag</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="adm-rewards" class="inner-panel">
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-title">🏆 Reward Candidates</div>
+      <div class="reward-subtabs" id="reward-subtabs">
+        <div class="reward-subtab active" onclick="selectRewardView(this,'overall')">Overall</div>
+        <div class="reward-subtab" onclick="selectRewardView(this,'age-under40')">Age &lt; 40 yr</div>
+        <div class="reward-subtab" onclick="selectRewardView(this,'age-40plus')">Age ≥ 40 yr</div>
+        <div class="reward-subtab" onclick="selectRewardView(this,'gender-male')">Male</div>
+        <div class="reward-subtab" onclick="selectRewardView(this,'gender-female')">Female</div>
+      </div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--burn);margin-bottom:10px">🔥 Burn Ranking</div>
+      <div class="dtw" id="reward-burn-table"></div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--bed);margin:20px 0 10px">😴 Bed Ranking</div>
+      <div class="dtw" id="reward-bed-table"></div>
+    </div>
+    <div class="gov-box">
+      <h4>⚖️ Governance Notice</h4>
+      <ul>
+        <li>Organizer reserves the right to review submitted data before finalizing rewards</li>
+        <li>Winners must provide supporting proof images upon request</li>
+        <li>Scores may be adjusted if data does not match evidence</li>
+        <li>Suspicious entries may be escalated for HR review</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="adm-teams" class="inner-panel">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🗂️ Functional Team List</div>
+        <div id="team-manage-list"></div>
+        <div class="sep"></div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label class="form-label">Add New Team</label>
+          <div style="display:flex;gap:8px">
+            <input class="form-input" id="new-team-input" placeholder="e.g. Maintenance" style="flex:1">
+            <button class="btn btn-secondary btn-sm" onclick="addTeam()">+ Add</button>
+          </div>
+        </div>
+        <div id="team-add-alert"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Team Stats Overview</div>
+        <div id="team-stats-overview"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="adm-data" class="inner-panel">
+    <div id="gs-status-banner"></div>
+    <div class="gs-config-card">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span>🔗 Google Sheets Connection</span>
+        <span id="gs-conn-badge" class="source-badge sb-local">📂 Local Storage</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Apps Script Web App URL</label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="gs-api-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec"
+            style="flex:1;font-family:'JetBrains Mono',monospace;font-size:12px" oninput="saveApiUrl()">
+          <button class="btn btn-primary btn-sm" onclick="testConnection()">Test</button>
+        </div>
+        <div class="form-hint">Paste your deployed Apps Script URL. Data syncs from Google Sheets automatically.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+        <button class="btn btn-secondary btn-sm" onclick="syncFromSheets()" id="sync-btn">🔄 Sync Now</button>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAutoRefresh()" id="auto-refresh-btn">⏱️ Auto-refresh: OFF</button>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)">
+          <span class="gs-status-dot gs-dot-idle" id="gs-dot"></span>
+          <span id="gs-status-text">Not connected</span>
+        </div>
+      </div>
+      <div id="gs-last-sync" style="font-size:11px;color:var(--text3);margin-top:10px"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Local Data Tools</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <button class="btn btn-secondary btn-sm" onclick="seedDemoData()">🌱 Load Demo Data</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportData()">📤 Export JSON</button>
+        <button class="btn btn-ghost btn-sm" onclick="if(confirm('Reset ALL local data?'))resetAllData()">🗑️ Reset Local</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Setup Guide — 5 Steps to Connect Google Sheets</div>
+      <div class="setup-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Create Google Sheet</div>
+          <div class="step-desc">Go to <strong>sheets.google.com</strong> → New spreadsheet → Name it "RPT Burn &amp; Bed"</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Open Apps Script &amp; paste code</div>
+          <div class="step-desc">In Google Sheet → <strong>Extensions → Apps Script</strong> → Delete all code → Paste the Apps Script code below → Save (Ctrl+S)</div>
+          <button class="btn btn-blue btn-sm" onclick="downloadAppsScript()" style="margin-top:10px">📥 Download Code.gs</button>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Run setupSheets() once</div>
+          <div class="step-desc">In Apps Script: select <code style="background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace">setupSheets</code> from function dropdown → click <strong>▶ Run</strong><br>This creates all 5 sheets with correct headers automatically.</div>
+        </div>
+      </div>
+      <div class="setup-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Deploy as Web App</div>
+          <div class="step-desc">
+            <strong>Deploy → New Deployment → Web App</strong><br>
+            • Execute as: <strong>Me</strong><br>
+            • Who has access: <strong>Anyone</strong><br>
+            → Click Deploy → Copy the Web App URL
+          </div>
+        </div>
+      </div>
+      <div class="setup-step" style="border-color:rgba(26,99,216,.3);background:var(--bed-dim)">
+        <div class="step-num" style="background:var(--bed)">5</div>
+        <div class="step-body">
+          <div class="step-title">Paste URL above → Test → Sync</div>
+          <div class="step-desc">
+            Paste the Web App URL in the field above → <strong>Test</strong> → if ✅ → <strong>Sync Now</strong><br><br>
+            <strong>Share your Google Sheet with colleagues</strong> — they enter data directly into the sheets:<br>
+            &nbsp;📋 <strong>participants</strong> — registration<br>
+            &nbsp;📊 <strong>entries</strong> — daily burn/sleep logs<br>
+            &nbsp;⚡ <strong>events</strong> — challenge modifiers<br><br>
+            Dashboard auto-refreshes every 5 min when connected.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- TV OVERLAY -->
+<div id="tv-overlay">
+  <button class="tv-exit" onclick="exitTVMode()">✕ Exit</button>
+  <div class="tv-header-bar">
+    <div class="tv-logo"><span style="color:var(--burn)">BURN</span><span style="color:var(--border2)">&nbsp;&amp;&nbsp;</span><span style="color:var(--bed)">BED</span></div>
+    <div id="tv-event-pill"></div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text3)" id="tv-clock"></div>
+  </div>
+  <div class="tv-body" id="tv-body"></div>
+</div>
+
+<script>
+
+// ====================================================
+// CONFIG
+// ====================================================
+const FEATURES = { momentum:true, teamMomentum:true, highlightFeed:true, race:true, comeback:true, badges:true, eventSystem:true };
+const KEYS = { participants:'rpt_participants', entries:'rpt_daily_entries', proofs:'rpt_weekly_proofs', events:'rpt_events', teams:'rpt_teams' };
+
+// ====================================================
+// STORAGE
+// ====================================================
+const load = k => JSON.parse(localStorage.getItem(k)||'[]');
+const save = (k,v) => localStorage.setItem(k,JSON.stringify(v));
+const getParticipants = () => load(KEYS.participants);
+const getEntries      = () => load(KEYS.entries);
+const getProofs       = () => load(KEYS.proofs);
+const getEvents       = () => load(KEYS.events);
+const getTeams        = () => {
+  let t=load(KEYS.teams);
+  if(!t.length){ t=['Engineering','QA','Operation','Process Tech','HR','Finance','Sales','Marketing','IT','Management']; save(KEYS.teams,t); }
+  return t;
+};
+
+// ====================================================
+// HELPERS
+// ====================================================
+const today = () => new Date().toISOString().split('T')[0];
+const fmtDate = d => { try{ return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }catch{ return d; }};
+function getWeekId(ds){ const d=new Date(ds),j=new Date(d.getFullYear(),0,1),w=Math.ceil(((d-j)/86400000+j.getDay()+1)/7); return `${d.getFullYear()}-W${String(w).padStart(2,'0')}`; }
+function getAvailableWeeks(){ const e=getEntries(),w=[...new Set(e.map(x=>x.week_id))].sort().reverse(); if(w.length)return w; const o=[];for(let i=0;i<4;i++){const d=new Date();d.setDate(d.getDate()-i*7);o.push(getWeekId(d.toISOString().split('T')[0]));}return[...new Set(o)]; }
+function generateActivityId(){ const ex=getParticipants().map(p=>parseInt(p.activity_id.replace('RPT-',''))); let n=1001;while(ex.includes(n))n++; return `RPT-${n}`; }
+
+// ====================================================
+// AUTOCOMPLETE
+// ====================================================
+const acHL={};
+function acSearch(inId,resId,hidId,infoId){
+  const q=document.getElementById(inId).value.trim().toLowerCase();
+  const resEl=document.getElementById(resId);
+  document.getElementById(hidId).value='';
+  if(infoId&&document.getElementById(infoId)) document.getElementById(infoId).textContent='';
+  if(!q){resEl.classList.remove('open');resEl.innerHTML='';return;}
+  const matches=getParticipants().filter(p=>p.activity_id.toLowerCase().includes(q)||p.nickname.toLowerCase().includes(q)||(p.first_name+' '+p.last_name).toLowerCase().includes(q)).slice(0,8);
+  if(!matches.length){resEl.classList.remove('open');return;}
+  acHL[resId]=-1;
+  resEl.innerHTML=matches.map(p=>`<div class="ac-item" data-id="${p.activity_id}" data-lbl="${p.nickname} (${p.team})"
+    onmousedown="acSelect('${inId}','${resId}','${hidId}','${infoId}','${p.activity_id}','${p.nickname} (${p.team})')">
+    <span class="ac-id">${p.activity_id}</span><span class="ac-name">${p.nickname}</span><span class="ac-team">${p.team}</span>
+  </div>`).join('');
+  resEl.classList.add('open');
+}
+function acSelect(inId,resId,hidId,infoId,aid,lbl){
+  document.getElementById(inId).value=lbl;
+  document.getElementById(hidId).value=aid;
+  document.getElementById(resId).classList.remove('open');
+  document.getElementById(resId).innerHTML='';
+  if(infoId&&document.getElementById(infoId)){
+    const p=getParticipants().find(x=>x.activity_id===aid);
+    if(p) document.getElementById(infoId).innerHTML=`<span style="color:var(--burn);font-family:'JetBrains Mono',monospace">${aid}</span> · ${p.team} · ${p.gender||'—'} · ${p.age_group||'—'}`;
+  }
+  if(inId==='en-ac-inp') renderWeekSummary();
+  if(inId==='hi-ac-inp') renderHistory();
+  if(inId==='pe-ac-inp') renderPersonalDash();
+}
+function acKeyNav(e,resId,inId,hidId,infoId){
+  const items=document.getElementById(resId).querySelectorAll('.ac-item');
+  if(!items.length) return;
+  if(!acHL[resId]) acHL[resId]=-1;
+  if(e.key==='ArrowDown') acHL[resId]=Math.min(acHL[resId]+1,items.length-1);
+  else if(e.key==='ArrowUp') acHL[resId]=Math.max(acHL[resId]-1,-1);
+  else if(e.key==='Enter'&&acHL[resId]>=0){ const it=items[acHL[resId]]; acSelect(inId,resId,hidId,infoId,it.dataset.id,it.dataset.lbl); e.preventDefault(); return; }
+  else if(e.key==='Escape'){ document.getElementById(resId).classList.remove('open'); return; }
+  items.forEach((it,i)=>it.classList.toggle('hi',i===acHL[resId]));
+}
+document.addEventListener('click',e=>{ document.querySelectorAll('.ac-results.open').forEach(el=>{ if(!el.parentElement.contains(e.target)) el.classList.remove('open'); }); });
+
+// ====================================================
+// NAVIGATION
+// ====================================================
+function switchModule(name){
+  document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById(`module-${name}`).classList.add('active');
+  document.querySelector(`[data-mod="${name}"]`)?.classList.add('active');
+  document.querySelector(`[data-bn="${name}"]`)?.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(name==='register'){renderParticipantList();populateTeamSelect();}
+  if(name==='entry'){setTodayDate();initBatchRows();}
+  if(name==='proof'){populateWeekSelect();renderProofList();}
+  if(name==='dashboard') renderDashboard();
+  if(name==='events'){populateEventTargets();renderEventsList();}
+  if(name==='admin'){renderAdminSearch();renderScreening();renderRewards();renderTeamManage();}
+}
+function switchInner(el,panelId,tabGroupId){
+  el.parentElement.querySelectorAll('.inner-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(tabGroupId).parentElement.querySelectorAll('.inner-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+}
+
+// ====================================================
+// TEAMS
+// ====================================================
+function populateTeamSelect(){
+  const s=document.getElementById('reg-team'); if(!s) return;
+  s.innerHTML=`<option value="">Select team</option>`+getTeams().map(t=>`<option value="${t}">${t}</option>`).join('');
+}
+function populateEventTargets(){
+  const s=document.getElementById('ev-target'); if(!s) return;
+  s.innerHTML=`<option value="all">All Participants</option><option value="last_team">Last Rank Team (auto)</option>`+getTeams().map(t=>`<option value="${t}">${t}</option>`).join('');
+}
+function addTeam(){
+  const inp=document.getElementById('new-team-input'),alertEl=document.getElementById('team-add-alert'),name=inp.value.trim();
+  if(!name){alertEl.innerHTML=`<div class="alert alert-error">Enter team name</div>`;return;}
+  const teams=getTeams();
+  if(teams.includes(name)){alertEl.innerHTML=`<div class="alert alert-warn">Team already exists</div>`;return;}
+  teams.push(name); save(KEYS.teams,teams); inp.value='';
+  alertEl.innerHTML=`<div class="alert alert-success">✅ "${name}" added</div>`;
+  renderTeamManage(); populateTeamSelect(); populateEventTargets();
+}
+function removeTeam(name){
+  if(getParticipants().find(p=>p.team===name)){alert(`Cannot remove "${name}" — participants assigned.`);return;}
+  if(!confirm(`Remove team "${name}"?`)) return;
+  save(KEYS.teams,getTeams().filter(t=>t!==name));
+  renderTeamManage(); populateTeamSelect();
+}
+function renderTeamManage(){
+  const teams=getTeams(),participants=getParticipants(),entries=getEntries();
+  const el=document.getElementById('team-manage-list'),statsEl=document.getElementById('team-stats-overview');
+  if(!el) return;
+  el.innerHTML=teams.map(t=>{
+    const c=participants.filter(p=>p.team===t).length;
+    return `<div class="team-manage-row"><div class="tm-name">${t}</div><div class="tm-count">${c} member${c!==1?'s':''}</div>
+      <button class="btn btn-ghost btn-sm" onclick="removeTeam('${t}')">✕</button></div>`;
+  }).join('')||`<div class="empty-state"><div class="icon">🗂️</div>No teams</div>`;
+  if(statsEl) statsEl.innerHTML=teams.map(t=>{
+    const members=participants.filter(p=>p.team===t);
+    const te=entries.filter(e=>members.find(m=>m.activity_id===e.activity_id));
+    const avgB=members.length?(te.reduce((s,e)=>s+(e.burn_kcal||0),0)/members.length).toFixed(0):'—';
+    const avgS=members.length?(te.reduce((s,e)=>s+(e.sleep_hr||0),0)/members.length).toFixed(1):'—';
+    return `<div class="team-manage-row">
+      <div class="tm-name">${t}<div style="font-size:11px;color:var(--text3)">${members.length} members</div></div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--burn);text-align:right;min-width:70px">${avgB}<div style="font-size:10px;color:var(--text3);font-family:'DM Sans',sans-serif">avg kcal</div></div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--bed);text-align:right;min-width:60px">${avgS}<div style="font-size:10px;color:var(--text3);font-family:'DM Sans',sans-serif">avg hr</div></div>
+    </div>`;
+  }).join('');
+}
+
+// ====================================================
+// MODULE 1: REGISTER
+// ====================================================
+function registerParticipant(){
+  const email=document.getElementById('reg-email').value.trim().toLowerCase();
+  const fname=document.getElementById('reg-firstname').value.trim();
+  const lname=document.getElementById('reg-lastname').value.trim();
+  const nick=document.getElementById('reg-nickname').value.trim();
+  const gender=document.getElementById('reg-gender').value;
+  const age=document.getElementById('reg-age').value;
+  const team=document.getElementById('reg-team').value;
+  const alertEl=document.getElementById('reg-alert');
+  if(!email||!fname||!lname||!nick||!team){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Please fill all required fields.</div>`;return;}
+  if(!/\S+@\S+\.\S+/.test(email)){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Invalid email.</div>`;return;}
+  const participants=getParticipants();
+  if(participants.find(p=>p.email===email)){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Email already registered.</div>`;return;}
+  const newP={activity_id:generateActivityId(),email,first_name:fname,last_name:lname,nickname:nick,gender,age_group:age,team,register_date:today()};
+  participants.push(newP); save(KEYS.participants,participants);
+  alertEl.innerHTML='';
+  document.getElementById('reg-id-display').textContent=newP.activity_id;
+  document.getElementById('reg-success-msg').innerHTML=`<p style="font-size:13px;color:var(--text2)">Welcome, <strong>${nick}</strong>! Team: <strong>${team}</strong></p>`;
+  document.getElementById('reg-success-card').style.display='block';
+  ['reg-email','reg-firstname','reg-lastname','reg-nickname'].forEach(id=>document.getElementById(id).value='');
+  ['reg-gender','reg-age','reg-team'].forEach(id=>document.getElementById(id).value='');
+}
+function renderLookup(){
+  const q=(document.getElementById('lookup-input')?.value||'').trim().toLowerCase();
+  const el=document.getElementById('lookup-results'); if(!el) return;
+  if(!q){el.innerHTML='';return;}
+  const matches=getParticipants().filter(p=>p.email.includes(q)||p.nickname.toLowerCase().includes(q)||(p.first_name+' '+p.last_name).toLowerCase().includes(q));
+  el.innerHTML=matches.length?matches.map(p=>`<div class="aid-badge" style="margin-bottom:10px"><div><div class="aid-label">Activity ID</div><div class="aid-value">${p.activity_id}</div><div style="font-size:12px;color:var(--text3);margin-top:4px">${p.nickname} · ${p.team}</div></div><span style="font-size:24px">🔥</span></div>`).join(''):`<div class="empty-state"><div class="icon">🔍</div>No match found</div>`;
+}
+function renderParticipantList(){
+  const q=(document.getElementById('reg-search')?.value||'').toLowerCase();
+  const list=getParticipants().filter(p=>!q||p.nickname.toLowerCase().includes(q)||p.email.includes(q)||p.team.toLowerCase().includes(q)||p.activity_id.toLowerCase().includes(q));
+  const el=document.getElementById('participant-list-table'); if(!el) return;
+  if(!list.length){el.innerHTML=`<div class="empty-state"><div class="icon">📋</div>No participants yet</div>`;return;}
+  el.innerHTML=`<table class="data-table"><thead><tr><th>Activity ID</th><th>Nickname</th><th>Team</th><th>Gender</th><th>Age Group</th><th>Registered</th></tr></thead><tbody>
+    ${list.map(p=>`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--burn)">${p.activity_id}</td>
+      <td><strong>${p.nickname}</strong></td><td>${p.team}</td>
+      <td>${p.gender||'—'}</td><td>${p.age_group||'—'}</td><td>${fmtDate(p.register_date)}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+// ====================================================
+// MODULE 2: DAILY ENTRY
+// ====================================================
+function setTodayDate(){ const el=document.getElementById('entry-date'); if(el&&!el.value) el.value=today(); }
+function initBatchRows(){ const tb=document.getElementById('batch-rows'); if(!tb||tb.children.length) return; for(let i=0;i<3;i++) addBatchRow(); }
+function addBatchRow(){
+  const tb=document.getElementById('batch-rows'),d=new Date(); d.setDate(d.getDate()-tb.children.length);
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td style="padding:6px 12px"><input class="form-input" type="date" value="${d.toISOString().split('T')[0]}" style="padding:8px 10px"></td>
+    <td style="padding:6px 12px"><input class="form-input" type="number" min="0" max="5000" placeholder="kcal" style="padding:8px 10px"></td>
+    <td style="padding:6px 12px"><input class="form-input" type="number" min="0" max="24" step="0.5" placeholder="hr" style="padding:8px 10px"></td>
+    <td style="padding:6px 12px"><button class="btn btn-ghost btn-sm" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tb.appendChild(tr);
+}
+function saveSingleEntry(){
+  const aid=document.getElementById('en-aid').value,date=document.getElementById('entry-date').value;
+  const burn=parseFloat(document.getElementById('entry-burn').value),sleep=parseFloat(document.getElementById('entry-sleep').value);
+  const alertEl=document.getElementById('entry-alert');
+  if(!aid){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Search and select a participant first.</div>`;return;}
+  if(!date){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Select a date.</div>`;return;}
+  if(isNaN(burn)&&isNaN(sleep)){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Enter at least one metric.</div>`;return;}
+  if(!isNaN(burn)&&(burn<0||burn>5000)){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Burn: 0–5000 kcal.</div>`;return;}
+  if(!isNaN(sleep)&&(sleep<0||sleep>24)){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Sleep: 0–24 hr.</div>`;return;}
+  _saveEntry({activity_id:aid,date,burn_kcal:isNaN(burn)?0:burn,sleep_hr:isNaN(sleep)?0:sleep});
+  alertEl.innerHTML=`<div class="alert alert-success">✅ Entry saved for ${fmtDate(date)}!</div>`;
+  document.getElementById('entry-burn').value=''; document.getElementById('entry-sleep').value='';
+  renderWeekSummary();
+}
+function _saveEntry(data){
+  const entries=getEntries(),idx=entries.findIndex(e=>e.activity_id===data.activity_id&&e.date===data.date);
+  const rec={...data,week_id:getWeekId(data.date),submit_timestamp:new Date().toISOString()};
+  if(idx>=0)entries[idx]=rec;else entries.push(rec);
+  save(KEYS.entries,entries);
+}
+function saveBatchEntries(){
+  const aid=document.getElementById('ba-aid').value,alertEl=document.getElementById('batch-alert');
+  if(!aid){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Select participant first.</div>`;return;}
+  let saved=0;
+  document.querySelectorAll('#batch-rows tr').forEach(tr=>{
+    const inputs=tr.querySelectorAll('input'),date=inputs[0].value,burn=parseFloat(inputs[1].value),sleep=parseFloat(inputs[2].value);
+    if(date&&(!isNaN(burn)||!isNaN(sleep))){_saveEntry({activity_id:aid,date,burn_kcal:isNaN(burn)?0:burn,sleep_hr:isNaN(sleep)?0:sleep});saved++;}
+  });
+  alertEl.innerHTML=`<div class="alert alert-success">✅ ${saved} entries saved!</div>`;
+}
+function renderWeekSummary(){
+  const aid=document.getElementById('en-aid').value,el=document.getElementById('entry-week-summary');
+  if(!aid||!el) return;
+  const wid=getWeekId(today()),entries=getEntries().filter(e=>e.activity_id===aid&&e.week_id===wid);
+  const tB=entries.reduce((s,e)=>s+(e.burn_kcal||0),0),tS=entries.reduce((s,e)=>s+(e.sleep_hr||0),0);
+  el.innerHTML=`<div class="grid-2" style="margin-bottom:14px">
+    <div style="background:var(--bg3);padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border)">
+      <div class="stat-label">This Week Burn</div><div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--burn)">${tB.toLocaleString()}</div>
+      <div class="stat-sub">${entries.length} days logged</div></div>
+    <div style="background:var(--bg3);padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border)">
+      <div class="stat-label">This Week Bed</div><div style="font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--bed)">${tS.toFixed(1)}</div>
+      <div class="stat-sub">hours total</div></div>
+  </div>
+  ${entries.length?`<table class="data-table"><thead><tr><th>Date</th><th>Burn</th><th>Bed</th></tr></thead><tbody>
+    ${entries.sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`<tr><td>${fmtDate(e.date)}</td><td style="color:var(--burn);font-weight:700">${e.burn_kcal} kcal</td><td style="color:var(--bed);font-weight:700">${e.sleep_hr} hr</td></tr>`).join('')}
+  </tbody></table>`:`<div class="empty-state"><div class="icon">📊</div>No entries this week</div>`}`;
+}
+function renderHistory(){
+  const aid=document.getElementById('hi-aid').value,el=document.getElementById('history-table');
+  if(!el) return;
+  if(!aid){el.innerHTML=`<div class="empty-state"><div class="icon">📊</div>Search a participant above</div>`;return;}
+  const entries=getEntries().filter(e=>e.activity_id===aid).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!entries.length){el.innerHTML=`<div class="empty-state"><div class="icon">📊</div>No entries yet</div>`;return;}
+  el.innerHTML=`<table class="data-table"><thead><tr><th>Date</th><th>Week</th><th>🔥 Burn (kcal)</th><th>😴 Bed (hr)</th><th>Submitted</th></tr></thead><tbody>
+    ${entries.map(e=>`<tr><td>${fmtDate(e.date)}</td><td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${e.week_id}</td>
+      <td style="color:var(--burn);font-weight:700">${e.burn_kcal}</td><td style="color:var(--bed);font-weight:700">${e.sleep_hr}</td>
+      <td style="font-size:11px;color:var(--text3)">${new Date(e.submit_timestamp).toLocaleDateString()}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+// ====================================================
+// MODULE 3: PROOF
+// ====================================================
+const proofImgs={burn:null,bed:null};
+function populateWeekSelect(){ const s=document.getElementById('proof-week'); if(!s) return; s.innerHTML=getAvailableWeeks().map(w=>`<option value="${w}">${w}</option>`).join(''); }
+function handleUpload(type,input){ const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ proofImgs[type]=e.target.result; document.getElementById(`pv-${type}`).innerHTML=`<img src="${e.target.result}" class="proof-thumb">`; }; r.readAsDataURL(f); }
+function saveProof(){
+  const aid=document.getElementById('pr-aid').value,week=document.getElementById('proof-week').value;
+  const combined=document.getElementById('proof-combined').checked,alertEl=document.getElementById('proof-alert');
+  if(!aid||!week){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Select participant and week.</div>`;return;}
+  if(!proofImgs.burn&&!proofImgs.bed){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Upload at least one image.</div>`;return;}
+  const proofs=getProofs(),idx=proofs.findIndex(p=>p.activity_id===aid&&p.week_id===week);
+  const rec={activity_id:aid,week_id:week,burn_proof:proofImgs.burn,bed_proof:combined?proofImgs.burn:proofImgs.bed,combined,proof_submit_date:today()};
+  if(idx>=0)proofs[idx]=rec;else proofs.push(rec);
+  save(KEYS.proofs,proofs);
+  alertEl.innerHTML=`<div class="alert alert-success">✅ Proof submitted for ${week}!</div>`;
+  proofImgs.burn=null;proofImgs.bed=null;['pv-burn','pv-bed'].forEach(id=>document.getElementById(id).innerHTML='');
+  renderProofList();
+}
+function renderProofList(){
+  const proofs=getProofs(),participants=getParticipants();
+  const nick=id=>participants.find(p=>p.activity_id===id)?.nickname||id;
+  const card=p=>`<div style="padding:12px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div><strong>${nick(p.activity_id)}</strong><span style="font-size:11px;color:var(--text3);margin-left:8px;font-family:'JetBrains Mono',monospace">${p.week_id}</span></div>
+      <div style="font-size:11px;color:var(--text3)">${fmtDate(p.proof_submit_date)}</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${p.burn_proof?`<img src="${p.burn_proof}" class="proof-thumb" alt="burn">`:''} 
+      ${p.bed_proof&&!p.combined?`<img src="${p.bed_proof}" class="proof-thumb" alt="bed">`:''}
+      ${p.combined?`<span class="chip chip-green">Combined</span>`:''}
+    </div></div>`;
+  const rEl=document.getElementById('proof-recent'),aEl=document.getElementById('proof-all-list');
+  if(rEl) rEl.innerHTML=proofs.length?proofs.slice().reverse().slice(0,5).map(card).join(''):`<div class="empty-state"><div class="icon">📸</div>No proof yet</div>`;
+  if(aEl) aEl.innerHTML=proofs.length?proofs.slice().reverse().map(card).join(''):`<div class="empty-state"><div class="icon">📸</div>No proof yet</div>`;
+}
+
+// ====================================================
+// EVENT ADJUSTED ENTRIES
+// ====================================================
+function getAdjustedEntries(){
+  if(!FEATURES.eventSystem) return getEntries();
+  const events=getEvents(),now=today(),active=events.filter(e=>e.start_date<=now&&e.end_date>=now);
+  if(!active.length) return getEntries();
+  const participants=getParticipants();
+  const lastTeam=computeTeamAverages('burn',getEntries(),participants);
+  const lastTeamName=lastTeam.length?lastTeam[lastTeam.length-1].team:null;
+  return getEntries().map(entry=>{
+    const p=participants.find(x=>x.activity_id===entry.activity_id);
+    let burn=entry.burn_kcal,bed=entry.sleep_hr;
+    active.forEach(ev=>{
+      const applies=ev.target==='all'||(ev.target==='last_team'&&p?.team===lastTeamName)||(p?.team===ev.target);
+      if(applies&&entry.date>=ev.start_date&&entry.date<=ev.end_date){
+        if(ev.metric==='burn'||ev.metric==='both') burn*=parseFloat(ev.multiplier);
+        if(ev.metric==='bed'||ev.metric==='both') bed*=parseFloat(ev.multiplier);
+      }
+    });
+    return{...entry,burn_kcal:burn,sleep_hr:bed};
+  });
+}
+function computeIndividualTotals(metric,participants,entries){
+  if(!participants) participants=getParticipants();
+  if(!entries) entries=getAdjustedEntries();
+  const totals={};
+  entries.forEach(e=>{if(!totals[e.activity_id])totals[e.activity_id]=0;totals[e.activity_id]+=(metric==='burn'?(e.burn_kcal||0):(e.sleep_hr||0));});
+  return participants.map(p=>({...p,total:totals[p.activity_id]||0})).sort((a,b)=>b.total-a.total);
+}
+function computeTeamAverages(metric,entries,participants){
+  if(!participants||!participants.length) participants=getParticipants();
+  if(!entries||!entries.length) entries=getAdjustedEntries();
+  const byTeam={};
+  participants.forEach(p=>{if(!byTeam[p.team])byTeam[p.team]={m:0,total:0};byTeam[p.team].m++;});
+  entries.forEach(e=>{const p=participants.find(x=>x.activity_id===e.activity_id);if(!p||!byTeam[p.team])return;byTeam[p.team].total+=(metric==='burn'?(e.burn_kcal||0):(e.sleep_hr||0));});
+  return Object.entries(byTeam).map(([team,d])=>({team,members:d.m,avg:d.m?d.total/d.m:0})).sort((a,b)=>b.avg-a.avg);
+}
+
+// ====================================================
+// MODULE 4: DASHBOARD
+// ====================================================
+function renderDashboard(){
+  const participants=getParticipants(),entries=getAdjustedEntries(),raw=getEntries();
+  document.getElementById('d-total-p').textContent=participants.length;
+  document.getElementById('d-total-burn').textContent=entries.reduce((s,e)=>s+(e.burn_kcal||0),0).toLocaleString();
+  document.getElementById('d-total-sleep').textContent=entries.reduce((s,e)=>s+(e.sleep_hr||0),0).toFixed(1);
+  renderLeaderboards(participants,entries);
+  renderTeamRankings(participants,entries);
+  renderLiveEnergy(participants,raw,entries);
+  renderEventBanner();
+  updateHeaderPill();
+}
+function renderLeaderboards(participants,entries){
+  const rc=i=>i===0?'r1':i===1?'r2':i===2?'r3':'';
+  const medal=i=>['🥇','🥈','🥉'][i]||'';
+  const lbHtml=(arr,metric,unit,color)=>arr.length?arr.slice(0,10).map((p,i)=>`
+    <div class="lb-item ${i===0?'top1':i===1?'top2':i===2?'top3':''}">
+      <div class="lb-rank ${rc(i)}">${medal(i)||(i+1)}</div>
+      <div class="lb-info"><div class="lb-nickname">${p.nickname}</div><div class="lb-team">${p.team}</div></div>
+      <div class="lb-val"><div class="lb-num" style="color:${color}">${metric==='burn'?p.total.toLocaleString():p.total.toFixed(1)}</div><div class="lb-unit">${unit}</div></div>
+    </div>`).join(''):`<div class="empty-state"><div class="icon">📊</div>No data yet</div>`;
+  document.getElementById('lb-burn').innerHTML=lbHtml(computeIndividualTotals('burn',participants,entries),'burn','kcal','var(--burn)');
+  document.getElementById('lb-bed').innerHTML=lbHtml(computeIndividualTotals('bed',participants,entries),'bed','hr','var(--bed)');
+}
+function renderTeamRankings(participants,entries){
+  const tHtml=(teams,metric,unit,color)=>teams.length?teams.map((t,i)=>{
+    const a=i===0?'↑↑':i<3?'↑':'→',ac=i===0?'var(--green)':i<3?'var(--green2)':'var(--text3)';
+    return `<div class="team-row">
+      <div class="team-rank" style="${i<3?'color:var(--yellow)':''}">${i+1}</div>
+      <div><div class="team-name">${t.team}</div><div class="team-members">${t.members} member${t.members!==1?'s':''}</div></div>
+      <div style="font-size:18px;color:${ac};min-width:30px;text-align:center">${a}</div>
+      <div class="lb-val"><div class="team-avg" style="color:${color}">${metric==='burn'?t.avg.toFixed(0):t.avg.toFixed(1)}</div><div class="lb-unit">${unit}/head</div></div>
+    </div>`;
+  }).join(''):`<div class="empty-state"><div class="icon">🚀</div>No data</div>`;
+  document.getElementById('team-burn').innerHTML=tHtml(computeTeamAverages('burn',entries,participants),'burn','kcal','var(--burn)');
+  document.getElementById('team-bed').innerHTML=tHtml(computeTeamAverages('bed',entries,participants),'bed','hr','var(--bed)');
+}
+
+// ====================================================
+// LIVE ENERGY WIDGETS
+// ====================================================
+
+// Helper: get the "effective today" = latest date that exists in entries
+// This makes all widgets work correctly even with historical demo data
+function getDataAnchor(rawEntries) {
+  if (!rawEntries.length) return today();
+  return rawEntries.reduce((max, e) => e.date > max ? e.date : max, rawEntries[0].date);
+}
+
+function dateMinusDays(dateStr, n) {
+  const d = new Date(dateStr + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().split('T')[0];
+}
+
+function renderLiveEnergy(participants, rawEntries, adjEntries) {
+  // Anchor = latest date in data (not system today — handles demo/historical data)
+  const anchor = getDataAnchor(rawEntries);
+  const recentCutoff  = dateMinusDays(anchor, 5);   // last 5 days = "recent"
+  const midCutoff     = dateMinusDays(anchor, 14);  // 6–14 days back = "earlier period"
+
+  // ── 1. INDIVIDUAL MOMENTUM — มาแรง 🔥 ────────────────────────────────
+  if (FEATURES.momentum) {
+    const momentum = participants.map(p => {
+      const all = rawEntries.filter(e => e.activity_id === p.activity_id);
+      // Recent window: last 5 days
+      const recentEntries = all.filter(e => e.date > recentCutoff && e.date <= anchor);
+      const recentSum     = recentEntries.reduce((s, e) => s + (e.burn_kcal || 0), 0);
+      const recentAvgDay  = recentEntries.length ? recentSum / recentEntries.length : 0;
+      // Earlier window: 6–14 days back
+      const olderEntries  = all.filter(e => e.date > midCutoff && e.date <= recentCutoff);
+      const olderAvgDay   = olderEntries.length ? olderEntries.reduce((s,e)=>s+(e.burn_kcal||0),0)/olderEntries.length : 0;
+      const delta         = olderAvgDay > 0 ? recentAvgDay - olderAvgDay : 0;
+      const pct           = olderAvgDay > 0 ? (delta / olderAvgDay) * 100 : 0;
+      return { ...p, delta, recentSum, recentAvgDay, olderAvgDay, pct };
+    })
+    .filter(p => p.delta > 0 && p.recentSum > 0)
+    .sort((a, b) => b.delta - a.delta)
+    .slice(0, 5);
+
+    document.getElementById('fw-momentum-list').innerHTML = momentum.length
+      ? momentum.map((p, i) => `
+        <div class="fun-item anim-slide" style="animation-delay:${i * 0.07}s">
+          <div class="fun-pos">${i + 1}</div>
+          <div class="fun-name">${p.nickname}${i === 0 ? ' 🔥' : ''}</div>
+          <div style="text-align:right">
+            <div class="fun-delta d-up">+${p.delta.toFixed(0)} kcal/day</div>
+            <div style="font-size:10px;color:var(--text3)">↑${p.pct.toFixed(0)}% vs prev week</div>
+          </div>
+        </div>`).join('')
+      : `<div style="color:var(--text3);font-size:13px;padding:10px 0">Not enough data range yet</div>`;
+  }
+
+  // ── 2. TEAM MOMENTUM — ทีมกำลังพุ่ง 🚀 ──────────────────────────────
+  if (FEATURES.teamMomentum) {
+    const teamSet = [...new Set(participants.map(p => p.team))];
+    const tm = teamSet.map(team => {
+      const members   = participants.filter(p => p.team === team);
+      const memberIds = new Set(members.map(m => m.activity_id));
+      const te        = rawEntries.filter(e => memberIds.has(e.activity_id));
+
+      const recentE   = te.filter(e => e.date > recentCutoff && e.date <= anchor);
+      const recentAvg = recentE.length  ? recentE.reduce((s,e)=>s+(e.burn_kcal||0),0)/recentE.length  : 0;
+
+      const olderE    = te.filter(e => e.date > midCutoff && e.date <= recentCutoff);
+      const olderAvg  = olderE.length   ? olderE.reduce((s,e)=>s+(e.burn_kcal||0),0)/olderE.length    : 0;
+
+      const delta     = olderAvg > 0 ? recentAvg - olderAvg : 0;
+      const pct       = olderAvg > 0 ? (delta / olderAvg) * 100 : 0;
+      const arrow     = pct > 15 ? '↑↑' : delta > 0 ? '↑' : delta < -5 ? '↓' : '→';
+      const ac        = pct > 15 ? 'd-up' : delta > 0 ? 'd-up' : delta < -5 ? 'd-down' : 'd-neutral';
+      return { team, delta, pct, arrow, ac, members: members.length };
+    }).sort((a, b) => b.delta - a.delta);
+
+    document.getElementById('fw-team-momentum-list').innerHTML = tm.map((t, i) => `
+      <div class="fun-item">
+        <div class="fun-pos">${i + 1}</div>
+        <div class="fun-name">${t.team} <span style="font-size:10px;color:var(--text3)">${t.members}p</span></div>
+        <div style="text-align:right">
+          <div class="fun-delta ${t.ac}">${t.arrow} ${t.delta > 0 ? '+' : ''}${t.delta.toFixed(0)} kcal/entry</div>
+          <div style="font-size:10px;color:var(--text3)">${t.pct >= 0 ? '+' : ''}${t.pct.toFixed(0)}% vs prev</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── 3. DAILY HIGHLIGHTS — ⚡ วันนี้เกิดอะไรขึ้น ───────────────────────
+  if (FEATURES.highlightFeed) {
+    const highlights = [];
+    // Use anchor day as "today" for highlights
+    const anchorEntries = rawEntries.filter(e => e.date === anchor);
+    const topAnchor = [...anchorEntries].sort((a,b) => b.burn_kcal - a.burn_kcal)[0];
+    if (topAnchor) {
+      const p = participants.find(x => x.activity_id === topAnchor.activity_id);
+      highlights.push({ t: `🔥 ${p?.nickname || ''} burned ${topAnchor.burn_kcal.toLocaleString()} kcal on the latest day!`, cls: '' });
+    }
+    const topSleep = [...anchorEntries].sort((a,b) => b.sleep_hr - a.sleep_hr)[0];
+    if (topSleep && topSleep !== topAnchor) {
+      const p = participants.find(x => x.activity_id === topSleep.activity_id);
+      highlights.push({ t: `😴 ${p?.nickname || ''} slept ${topSleep.sleep_hr} hr — best sleep of the day!`, cls: 'hl-bed' });
+    }
+    const burnTeams = computeTeamAverages('burn', rawEntries, participants);
+    if (burnTeams[0]) highlights.push({ t: `🚀 ${burnTeams[0].team} leads team burn with ${burnTeams[0].avg.toFixed(0)} kcal avg/head`, cls: 'hl-green' });
+    const burnTop   = computeIndividualTotals('burn', participants, adjEntries);
+    if (burnTop[0])  highlights.push({ t: `🏆 ${burnTop[0].nickname} leads all-time burn: ${burnTop[0].total.toLocaleString()} kcal`, cls: 'hl-yellow' });
+    const bedTeams  = computeTeamAverages('bed', rawEntries, participants);
+    if (bedTeams[0]) highlights.push({ t: `😴 ${bedTeams[0].team} avg sleep: ${bedTeams[0].avg.toFixed(1)} hr — best rested team!`, cls: 'hl-bed' });
+    // Momentum highlight — who is hottest right now?
+    const anchor2 = anchor, rc2 = recentCutoff;
+    const hottest = participants.map(p => {
+      const re = rawEntries.filter(e => e.activity_id === p.activity_id && e.date > rc2 && e.date <= anchor2);
+      return { nick: p.nickname, sum: re.reduce((s,e)=>s+(e.burn_kcal||0),0) };
+    }).sort((a,b) => b.sum - a.sum)[0];
+    if (hottest) highlights.push({ t: `🔥 ${hottest.nick} is on fire — ${hottest.sum.toLocaleString()} kcal in the last 5 days!`, cls: '' });
+    highlights.push({ t: `💪 ${participants.length} challengers competing across ${[...new Set(participants.map(p=>p.team))].length} teams!`, cls: 'hl-green' });
+
+    document.getElementById('fw-feed-list').innerHTML = highlights.slice(0, 6)
+      .map(h => `<div class="hl-item ${h.cls}">${h.t}</div>`).join('');
+  }
+
+  // ── 4. RACE to 20,000 kcal — 🏁 ─────────────────────────────────────
+  if (FEATURES.race) {
+    const TARGET = 20000;
+    const ranked = computeIndividualTotals('burn', participants, adjEntries).slice(0, 8);
+    const maxTotal = ranked[0]?.total || 1;
+    document.getElementById('fw-race-list').innerHTML = ranked.length
+      ? ranked.map((p, i) => {
+          const pct = Math.min(100, (p.total / TARGET) * 100);
+          const barColor = i === 0 ? 'pb-burn' : i < 3 ? 'pb-burn' : 'pb-bed';
+          return `<div style="margin-bottom:11px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px">
+              <span style="font-weight:600">${i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : ''}${p.nickname}</span>
+              <span style="color:var(--burn);font-weight:700">${p.total.toLocaleString()}</span>
+            </div>
+            <div class="pb-wrap"><div class="pb-fill ${barColor}" style="width:${pct}%"></div></div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${pct.toFixed(1)}% of ${TARGET.toLocaleString()} target</div>
+          </div>`;
+        }).join('')
+      : `<div style="color:var(--text3);font-size:13px;padding:10px 0">No entries yet</div>`;
+  }
+
+  // ── 5. COMEBACK of the Week — 💥 ──────────────────────────────────────
+  if (FEATURES.comeback) {
+    // Compare team rank in earlier period vs recent period
+    const earlier = rawEntries.filter(e => e.date > midCutoff && e.date <= recentCutoff);
+    const recent2 = rawEntries.filter(e => e.date > recentCutoff && e.date <= anchor);
+    const earlyRanks = computeTeamAverages('burn', earlier, participants);
+    const recentRanks = computeTeamAverages('burn', recent2, participants);
+    const comebacks = recentRanks.map((t, newRank) => {
+      const oldRankObj = earlyRanks.findIndex(x => x.team === t.team);
+      const oldRank = oldRankObj >= 0 ? oldRankObj + 1 : earlyRanks.length + 1;
+      return { team: t.team, oldRank, newRank: newRank + 1, diff: oldRank - (newRank + 1) };
+    }).filter(t => t.diff > 0).sort((a, b) => b.diff - a.diff).slice(0, 4);
+
+    document.getElementById('fw-comeback-list').innerHTML = comebacks.length
+      ? comebacks.map(t => `
+        <div class="fun-item">
+          <div style="flex:1">
+            <div class="fun-name">🚀 ${t.team}</div>
+            <div style="font-size:11px;color:var(--text3)">climbed ${t.diff} place${t.diff > 1 ? 's' : ''}</div>
+          </div>
+          <div class="fun-delta d-up" style="font-size:16px">
+            #${t.oldRank} → #${t.newRank}
+          </div>
+        </div>`).join('')
+      : `<div style="color:var(--text3);font-size:13px;padding:10px 0">Not enough data range yet</div>`;
+  }
+
+  // ── 6. FUN BADGES ────────────────────────────────────────────────────
+  if (FEATURES.badges) {
+    const burnRanked = computeIndividualTotals('burn', participants, adjEntries);
+    const bedRanked  = computeIndividualTotals('bed',  participants, adjEntries);
+    const badges = [];
+
+    if (burnRanked[0]) badges.push({ nick: burnRanked[0].nickname, badge: '🔥 Burn Leader', cls: 'chip-burn', sub: `${burnRanked[0].total.toLocaleString()} kcal total` });
+    if (bedRanked[0])  badges.push({ nick: bedRanked[0].nickname,  badge: '😴 Sleep Master', cls: 'chip-bed',  sub: `${bedRanked[0].total.toFixed(1)} hr total` });
+
+    // Consistency king — most days logged
+    const dayCount = {};
+    rawEntries.filter(e => e.burn_kcal > 0).forEach(e => { dayCount[e.activity_id] = (dayCount[e.activity_id] || 0) + 1; });
+    const topC = Object.entries(dayCount).sort((a, b) => b[1] - a[1])[0];
+    if (topC) {
+      const p = participants.find(x => x.activity_id === topC[0]);
+      if (p) badges.push({ nick: p.nickname, badge: '💪 Consistency King', cls: 'chip-green', sub: `${topC[1]} active days` });
+    }
+
+    // Hottest 5 days — most burn in recent window
+    const hotRecent = participants.map(p => ({
+      ...p,
+      recentBurn: rawEntries.filter(e => e.activity_id === p.activity_id && e.date > recentCutoff).reduce((s,e)=>s+(e.burn_kcal||0),0)
+    })).sort((a,b)=>b.recentBurn-a.recentBurn)[0];
+    if (hotRecent) badges.push({ nick: hotRecent.nickname, badge: '⚡ Hot This Week', cls: 'chip-yellow', sub: `${hotRecent.recentBurn.toLocaleString()} kcal (5d)` });
+
+    // Team booster — top scorer in top team
+    const burnTeams = computeTeamAverages('burn', adjEntries, participants);
+    if (burnTeams[0]) {
+      const top = burnRanked.find(p => p.team === burnTeams[0].team);
+      if (top) badges.push({ nick: top.nickname, badge: '🚀 Team Booster', cls: 'chip-purple', sub: `${burnTeams[0].team} #1` });
+    }
+
+    // Best sleeper this week
+    const hotSleep = participants.map(p => ({
+      ...p,
+      recentSleep: rawEntries.filter(e => e.activity_id === p.activity_id && e.date > recentCutoff).reduce((s,e)=>s+(e.sleep_hr||0),0)
+    })).sort((a,b)=>b.recentSleep-a.recentSleep)[0];
+    if (hotSleep) badges.push({ nick: hotSleep.nickname, badge: '🌙 Well Rested', cls: 'chip-cyan', sub: `${hotSleep.recentSleep.toFixed(1)} hr (5d)` });
+
+    document.getElementById('fw-badges-list').innerHTML = badges.length
+      ? badges.map(b => `
+        <div class="fun-item">
+          <div style="flex:1">
+            <div class="fun-name">${b.nick}</div>
+            <div style="font-size:10px;color:var(--text3)">${b.sub}</div>
+          </div>
+          <span class="chip ${b.cls}">${b.badge}</span>
+        </div>`).join('')
+      : `<div style="color:var(--text3);font-size:13px;padding:10px 0">Log activities to earn badges!</div>`;
+  }
+}
+
+function renderPersonalDash(){
+  const aid=document.getElementById('pe-aid').value,el=document.getElementById('personal-content');
+  if(!aid||!el) return;
+  const participants=getParticipants(),p=participants.find(x=>x.activity_id===aid); if(!p) return;
+  const entries=getAdjustedEntries().filter(e=>e.activity_id===aid);
+  const tB=entries.reduce((s,e)=>s+(e.burn_kcal||0),0),tS=entries.reduce((s,e)=>s+(e.sleep_hr||0),0);
+  const bRank=computeIndividualTotals('burn').findIndex(x=>x.activity_id===aid)+1;
+  const sRank=computeIndividualTotals('bed').findIndex(x=>x.activity_id===aid)+1;
+  const recent=entries.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
+  el.innerHTML=`<div class="personal-hero" style="margin-bottom:18px">
+    <div class="personal-name">${p.nickname}</div>
+    <div style="color:var(--text3);font-size:13px;margin-top:4px">${p.team} · <span class="personal-id">${p.activity_id}</span> · ${p.age_group||'—'} · ${p.gender||'—'}</div>
+    <div class="sep"></div>
+    <div class="grid-4">
+      <div><div class="stat-label">Total Burn</div><div style="font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--burn)">${tB.toLocaleString()}</div><div class="stat-sub">kcal</div></div>
+      <div><div class="stat-label">Total Bed</div><div style="font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--bed)">${tS.toFixed(1)}</div><div class="stat-sub">hours</div></div>
+      <div><div class="stat-label">Burn Rank</div><div style="font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--yellow)">#${bRank||'—'}</div><div class="stat-sub">of ${participants.length}</div></div>
+      <div><div class="stat-label">Bed Rank</div><div style="font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--purple)">#${sRank||'—'}</div><div class="stat-sub">of ${participants.length}</div></div>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Recent Activity (last 7)</div>
+    ${recent.length?`<table class="data-table"><thead><tr><th>Date</th><th>Week</th><th>🔥 Burn</th><th>😴 Bed</th></tr></thead><tbody>
+      ${recent.map(e=>`<tr><td>${fmtDate(e.date)}</td><td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${e.week_id}</td>
+        <td style="color:var(--burn);font-weight:700">${e.burn_kcal} kcal</td><td style="color:var(--bed);font-weight:700">${e.sleep_hr} hr</td></tr>`).join('')}
+    </tbody></table>`:`<div class="empty-state"><div class="icon">📊</div>No activity logged</div>`}
+  </div>`;
+}
+
+function renderEventBanner(){
+  const el=document.getElementById('dash-event-banner'); if(!el||!FEATURES.eventSystem) return;
+  const events=getEvents(),now=today(),active=events.find(e=>e.start_date<=now&&e.end_date>=now);
+  el.innerHTML=active?`<div class="event-banner"><div><div class="banner-text">${active.banner_text||active.name}</div>
+    <div class="banner-sub">${fmtDate(active.start_date)} → ${fmtDate(active.end_date)} · ${active.target}</div></div>
+    <div class="banner-mult">×${active.multiplier}</div></div>`:'';
+}
+function updateHeaderPill(){
+  const el=document.getElementById('hdr-event-pill'),events=getEvents(),now=today();
+  const active=events.find(e=>e.start_date<=now&&e.end_date>=now);
+  if(el) el.innerHTML=active?`<span class="chip chip-burn">⚡ ${active.name} ×${active.multiplier} LIVE</span>`:'';
+}
+
+// ====================================================
+// MODULE 5: EVENTS
+// ====================================================
+function createEvent(){
+  const name=document.getElementById('ev-name').value.trim(),metric=document.getElementById('ev-metric').value;
+  const mult=document.getElementById('ev-mult').value,target=document.getElementById('ev-target').value;
+  const start=document.getElementById('ev-start').value,end=document.getElementById('ev-end').value;
+  const banner=document.getElementById('ev-banner').value.trim();
+  const alertEl=document.getElementById('event-alert');
+  if(!name||!start||!end){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Fill name and dates.</div>`;return;}
+  if(start>end){alertEl.innerHTML=`<div class="alert alert-error">⚠️ Start must be before end.</div>`;return;}
+  const events=getEvents();
+  events.push({id:Date.now(),name,metric,multiplier:parseFloat(mult),target,start_date:start,end_date:end,banner_text:banner||name,created:today()});
+  save(KEYS.events,events);
+  alertEl.innerHTML=`<div class="alert alert-success">✅ Event "${name}" created!</div>`;
+  renderEventsList();updateHeaderPill();
+}
+function renderEventsList(){
+  const events=getEvents().slice().reverse(),el=document.getElementById('events-table'); if(!el) return;
+  if(!events.length){el.innerHTML=`<div class="empty-state"><div class="icon">⚡</div>No events yet</div>`;return;}
+  const now=today();
+  const st=e=>e.end_date<now?`<span class="ev-status es-ended">Ended</span>`:e.start_date>now?`<span class="ev-status es-upcoming">Upcoming</span>`:`<span class="ev-status es-active">Active</span>`;
+  el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding-top:6px">
+    ${events.map(e=>`<div class="event-card ${e.start_date<=now&&e.end_date>=now?'ev-active':''}">
+      ${st(e)}<div style="font-weight:700;font-size:15px;margin-bottom:6px;padding-right:80px">${e.name}</div>
+      <div class="ev-mult">×${e.multiplier}</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:6px">${e.metric==='burn'?'🔥':e.metric==='bed'?'😴':'🔥😴'} ${e.metric.toUpperCase()} · ${e.target}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px">${fmtDate(e.start_date)} → ${fmtDate(e.end_date)}</div>
+      <div style="font-size:12px;color:var(--text3);font-style:italic;margin-top:8px">"${e.banner_text}"</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="deleteEvent(${e.id})">Delete</button>
+    </div>`).join('')}
+  </div>`;
+}
+function deleteEvent(id){save(KEYS.events,getEvents().filter(e=>e.id!==id));renderEventsList();updateHeaderPill();}
+
+// ====================================================
+// MODULE 6: ADMIN
+// ====================================================
+function renderAdminSearch(){
+  const q=(document.getElementById('adm-q')?.value||'').toLowerCase();
+  const list=q?getParticipants().filter(p=>p.activity_id.toLowerCase().includes(q)||p.email.toLowerCase().includes(q)||p.nickname.toLowerCase().includes(q)||p.team.toLowerCase().includes(q)):getParticipants();
+  const el=document.getElementById('adm-search-results'); if(!el) return;
+  if(!list.length){el.innerHTML=`<div class="empty-state"><div class="icon">🔍</div>No participants found</div>`;return;}
+  el.innerHTML=`<table class="data-table"><thead><tr><th>Activity ID</th><th>Full Name</th><th>Email</th><th>Nickname</th><th>Team</th><th>Registered</th><th></th></tr></thead><tbody>
+    ${list.map(p=>`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--burn);font-size:12px">${p.activity_id}</td>
+      <td>${p.first_name} ${p.last_name}</td><td style="font-size:12px;color:var(--text3)">${p.email}</td>
+      <td><strong>${p.nickname}</strong></td><td>${p.team}</td><td>${fmtDate(p.register_date)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="showDetail('${p.activity_id}')">View</button></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function showDetail(aid){
+  const p=getParticipants().find(x=>x.activity_id===aid); if(!p) return;
+  const entries=getEntries().filter(e=>e.activity_id===aid),proofs=getProofs().filter(x=>x.activity_id===aid);
+  const tB=entries.reduce((s,e)=>s+(e.burn_kcal||0),0),tS=entries.reduce((s,e)=>s+(e.sleep_hr||0),0);
+  const el=document.getElementById('adm-detail-panel'); el.style.display='block';
+  document.getElementById('adm-detail-content').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:18px">
+      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px">${p.nickname}</div>
+      <div style="font-size:12px;color:var(--text3)">${p.activity_id} · ${p.email}</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('adm-detail-panel').style.display='none'">✕</button>
+    </div>
+    <div class="grid-4" style="margin-bottom:18px">
+      <div style="background:var(--bg3);padding:13px;border-radius:var(--radius-sm)"><div class="stat-label">Team</div><div style="font-weight:700;margin-top:4px">${p.team}</div></div>
+      <div style="background:var(--bg3);padding:13px;border-radius:var(--radius-sm)"><div class="stat-label">Total Burn</div><div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--burn)">${tB.toLocaleString()}</div></div>
+      <div style="background:var(--bg3);padding:13px;border-radius:var(--radius-sm)"><div class="stat-label">Total Bed</div><div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--bed)">${tS.toFixed(1)}</div></div>
+      <div style="background:var(--bg3);padding:13px;border-radius:var(--radius-sm)"><div class="stat-label">Days Logged</div><div style="font-family:'Bebas Neue',sans-serif;font-size:26px">${entries.length}</div></div>
+    </div>
+    <div class="stat-label" style="margin-bottom:10px">Recent Entries</div>
+    ${entries.length?`<table class="data-table"><thead><tr><th>Date</th><th>Burn</th><th>Bed</th></tr></thead><tbody>
+      ${entries.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,10).map(e=>`<tr><td>${fmtDate(e.date)}</td>
+        <td style="color:var(--burn)">${e.burn_kcal}</td><td style="color:var(--bed)">${e.sleep_hr}</td></tr>`).join('')}
+    </tbody></table>`:'<div style="color:var(--text3);font-size:13px">No entries</div>'}
+    <div class="stat-label" style="margin:16px 0 10px">Proof Submissions</div>
+    ${proofs.length?proofs.map(pr=>`<div style="font-size:13px;color:var(--text2);padding:8px 0;border-bottom:1px solid var(--border)">${pr.week_id} — ${fmtDate(pr.proof_submit_date)}${pr.burn_proof?`<img src="${pr.burn_proof}" style="width:46px;height:36px;border-radius:5px;object-fit:cover;margin-left:10px;vertical-align:middle">`:''}</div>`).join(''):'<div style="color:var(--text3);font-size:13px">No proof</div>'}
+  `;
+  el.scrollIntoView({behavior:'smooth'});
+}
+function renderScreening(){
+  const participants=getParticipants(),el=document.getElementById('screening-table'); if(!el) return;
+  if(!participants.length){el.innerHTML=`<div class="empty-state"><div class="icon">🛡️</div>No participants to screen</div>`;return;}
+  const results=participants.map(p=>{
+    const entries=getEntries().filter(e=>e.activity_id===p.activity_id),flags=[];
+    if(entries.filter(e=>e.burn_kcal>3000).length) flags.push(`High burn: ${entries.filter(e=>e.burn_kcal>3000).length}× >3000kcal`);
+    if(entries.filter(e=>e.sleep_hr>0&&(e.sleep_hr>13||e.sleep_hr<2)).length) flags.push('Sleep anomaly');
+    const bv=entries.map(e=>e.burn_kcal);for(let i=0;i<=bv.length-5;i++){if(bv.slice(i,i+5).every(v=>v===bv[i])){flags.push('Repetitive pattern');break;}}
+    const bf=entries.filter(e=>(new Date(e.submit_timestamp)-new Date(e.date))/86400000>7).length;
+    if(bf>=7) flags.push(`${bf} late entries`);
+    return{...p,flags,status:flags.length?'Review':'Normal'};
+  });
+  el.innerHTML=`<table class="data-table"><thead><tr><th>Activity ID</th><th>Nickname</th><th>Team</th><th>Days</th><th>Status</th><th>Flags</th></tr></thead><tbody>
+    ${results.map(r=>`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--burn);font-size:12px">${r.activity_id}</td>
+      <td><strong>${r.nickname}</strong></td><td>${r.team}</td>
+      <td>${getEntries().filter(e=>e.activity_id===r.activity_id).length}</td>
+      <td>${r.status==='Normal'?`<span class="flag-normal">✓ Normal</span>`:`<span class="flag-review">⚠ Review</span>`}</td>
+      <td style="font-size:11px;color:var(--text3)">${r.flags.join(' · ')||'—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+// REWARDS — 5 views
+let currentRewardView='overall';
+function selectRewardView(el,view){document.querySelectorAll('.reward-subtab').forEach(t=>t.classList.remove('active'));el.classList.add('active');currentRewardView=view;renderRewards();}
+function renderRewards(){
+  const all=getParticipants();
+  let filtered=all;
+  if(currentRewardView==='age-under40') filtered=all.filter(p=>p.age_group==='Under 40');
+  else if(currentRewardView==='age-40plus') filtered=all.filter(p=>p.age_group==='40 and above');
+  else if(currentRewardView==='gender-male') filtered=all.filter(p=>p.gender==='Male');
+  else if(currentRewardView==='gender-female') filtered=all.filter(p=>p.gender==='Female');
+  const adjEntries=getAdjustedEntries();
+  const burnRanked=computeIndividualTotals('burn',filtered,adjEntries).slice(0,10);
+  const bedRanked=computeIndividualTotals('bed',filtered,adjEntries).slice(0,10);
+  const tbl=(ranked,metric,unit)=>ranked.length?`<table class="data-table"><thead><tr><th>Rank</th><th>Activity ID</th><th>Full Name</th><th>Email</th><th>Nickname</th><th>Team</th><th>Age</th><th>Gender</th><th>${metric==='burn'?'🔥 Burn':'😴 Bed'}</th></tr></thead><tbody>
+    ${ranked.map((p,i)=>`<tr>
+      <td style="font-family:'Bebas Neue',sans-serif;font-size:20px;${i<3?'color:var(--yellow)':''}">${i+1}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--burn);font-size:11px">${p.activity_id}</td>
+      <td>${p.first_name} ${p.last_name}</td><td style="font-size:11px;color:var(--text3)">${p.email}</td>
+      <td><strong>${p.nickname}</strong></td><td>${p.team}</td>
+      <td>${p.age_group||'—'}</td><td>${p.gender||'—'}</td>
+      <td style="font-weight:700;color:${metric==='burn'?'var(--burn)':'var(--bed)'}">${metric==='burn'?p.total.toLocaleString():p.total.toFixed(1)} ${unit}</td>
+    </tr>`).join('')}</tbody></table>`:`<div class="empty-state"><div class="icon">🏆</div>No data for this group</div>`;
+  const bEl=document.getElementById('reward-burn-table'),sEl=document.getElementById('reward-bed-table');
+  if(bEl) bEl.innerHTML=tbl(burnRanked,'burn','kcal');
+  if(sEl) sEl.innerHTML=tbl(bedRanked,'bed','hr');
+}
+
+// ====================================================
+// TV MODE
+// ====================================================
+let tvClock;
+function enterTVMode(){
+  const burnRanked=computeIndividualTotals('burn').slice(0,5);
+  const bedRanked=computeIndividualTotals('bed').slice(0,5);
+  const burnTeams=computeTeamAverages('burn').slice(0,4);
+  const col=(arr,title,metric,unit,color)=>`<div>
+    <div class="tv-col-title" style="color:${color}">${title}</div>
+    ${arr.length?arr.map((p,i)=>`<div class="tv-lb-item">
+      <div class="tv-rank ${i===0?'r1':i===1?'r2':i===2?'r3':''}">${['🥇','🥈','🥉'][i]||i+1}</div>
+      <div class="tv-nick">${p.nickname||p.team}<div style="font-size:12px;color:var(--text3)">${p.team||''}</div></div>
+      <div class="tv-val" style="color:${color}">${metric==='burn'?(p.total||p.avg||0).toLocaleString():(p.total||p.avg||0).toFixed(1)}<span style="font-size:16px;color:var(--text3)"> ${unit}</span></div>
+    </div>`).join(''):'<div style="color:var(--text3);padding:20px">No data</div>'}
+  </div>`;
+  document.getElementById('tv-body').innerHTML=
+    col(burnRanked,'🔥 BURN LEADERS','burn','kcal','var(--burn)')+
+    col(bedRanked,'😴 BED LEADERS','bed','hr','var(--bed)')+
+    `<div><div class="tv-col-title" style="color:var(--cyan)">🚀 TEAM RANKING</div>
+      ${burnTeams.map((t,i)=>`<div class="tv-lb-item">
+        <div class="tv-rank ${i===0?'r1':i===1?'r2':i===2?'r3':''}">${i+1}</div>
+        <div class="tv-nick">${t.team}<div style="font-size:12px;color:var(--text3)">${t.members} members</div></div>
+        <div class="tv-val" style="color:var(--burn)">${t.avg.toFixed(0)}<span style="font-size:16px;color:var(--text3)"> kcal/head</span></div>
+      </div>`).join('')||'<div style="color:var(--text3);padding:20px">No data</div>'}
+    </div>`;
+  const events=getEvents(),now=today(),active=events.find(e=>e.start_date<=now&&e.end_date>=now);
+  document.getElementById('tv-event-pill').innerHTML=active?`<span class="chip chip-burn">⚡ ${active.name} ×${active.multiplier}</span>`:'';
+  document.body.classList.add('tv-mode');
+  function tick(){const el=document.getElementById('tv-clock');if(el)el.textContent=new Date().toLocaleTimeString('th-TH');}
+  tick();tvClock=setInterval(tick,1000);
+}
+function exitTVMode(){document.body.classList.remove('tv-mode');clearInterval(tvClock);}
+
+// ====================================================
+// DEMO DATA — 50 participants, 10 teams, full momentum
+// ====================================================
+
+const DEMO_PARTICIPANTS = [
+  // ── ENGINEERING (6 คน) ──
+  {activity_id:'RPT-1001',email:'moss.t@rpt.com',     first_name:'Mossana',   last_name:'Thongsuk',   nickname:'Moss',     gender:'Male',   age_group:'Under 40',    team:'Engineering',  register_date:'2025-03-03'},
+  {activity_id:'RPT-1002',email:'mint.c@rpt.com',     first_name:'Mint',      last_name:'Chalermwat', nickname:'Mint',     gender:'Female', age_group:'Under 40',    team:'Engineering',  register_date:'2025-03-03'},
+  {activity_id:'RPT-1003',email:'tong.b@rpt.com',     first_name:'Tong',      last_name:'Boonmee',    nickname:'Tong',     gender:'Male',   age_group:'Under 40',    team:'Engineering',  register_date:'2025-03-03'},
+  {activity_id:'RPT-1004',email:'earn.s@rpt.com',     first_name:'Earn',      last_name:'Sutthi',     nickname:'Earn',     gender:'Female', age_group:'40 and above',team:'Engineering',  register_date:'2025-03-04'},
+  {activity_id:'RPT-1005',email:'ake.p@rpt.com',      first_name:'Ake',       last_name:'Panya',      nickname:'Ake',      gender:'Male',   age_group:'Under 40',    team:'Engineering',  register_date:'2025-03-04'},
+  {activity_id:'RPT-1006',email:'prae.k@rpt.com',     first_name:'Prae',      last_name:'Kamol',      nickname:'Prae',     gender:'Female', age_group:'Under 40',    team:'Engineering',  register_date:'2025-03-05'},
+  // ── QA (5 คน) ──
+  {activity_id:'RPT-1007',email:'aria.s@rpt.com',     first_name:'Aria',      last_name:'Siriporn',   nickname:'Aria',     gender:'Female', age_group:'Under 40',    team:'QA',           register_date:'2025-03-03'},
+  {activity_id:'RPT-1008',email:'pop.r@rpt.com',      first_name:'Pop',       last_name:'Rattana',    nickname:'Pop',      gender:'Male',   age_group:'Under 40',    team:'QA',           register_date:'2025-03-04'},
+  {activity_id:'RPT-1009',email:'pim.n@rpt.com',      first_name:'Pim',       last_name:'Nantaporn',  nickname:'Pim',      gender:'Female', age_group:'Under 40',    team:'QA',           register_date:'2025-03-04'},
+  {activity_id:'RPT-1010',email:'new.w@rpt.com',      first_name:'New',       last_name:'Wirin',      nickname:'New',      gender:'Male',   age_group:'40 and above',team:'QA',           register_date:'2025-03-05'},
+  {activity_id:'RPT-1011',email:'gift.t@rpt.com',     first_name:'Gift',      last_name:'Thida',      nickname:'Gift',     gender:'Female', age_group:'Under 40',    team:'QA',           register_date:'2025-03-06'},
+  // ── OPERATION (6 คน) ──
+  {activity_id:'RPT-1012',email:'beam.k@rpt.com',     first_name:'Beam',      last_name:'Kasem',      nickname:'Beam',     gender:'Male',   age_group:'40 and above',team:'Operation',    register_date:'2025-03-03'},
+  {activity_id:'RPT-1013',email:'nook.p@rpt.com',     first_name:'Nook',      last_name:'Panya',      nickname:'Nook',     gender:'Female', age_group:'Under 40',    team:'Operation',    register_date:'2025-03-04'},
+  {activity_id:'RPT-1014',email:'max.j@rpt.com',      first_name:'Max',       last_name:'Jirawat',    nickname:'Max',      gender:'Male',   age_group:'Under 40',    team:'Operation',    register_date:'2025-03-04'},
+  {activity_id:'RPT-1015',email:'fern.c@rpt.com',     first_name:'Fern',      last_name:'Chanida',    nickname:'Fern',     gender:'Female', age_group:'40 and above',team:'Operation',    register_date:'2025-03-05'},
+  {activity_id:'RPT-1016',email:'bas.m@rpt.com',      first_name:'Bas',       last_name:'Manit',      nickname:'Bas',      gender:'Male',   age_group:'Under 40',    team:'Operation',    register_date:'2025-03-06'},
+  {activity_id:'RPT-1017',email:'oh.s@rpt.com',       first_name:'Oh',        last_name:'Suwan',      nickname:'Oh',       gender:'Male',   age_group:'Under 40',    team:'Operation',    register_date:'2025-03-06'},
+  // ── PROCESS TECH (5 คน) ──
+  {activity_id:'RPT-1018',email:'ploy.n@rpt.com',     first_name:'Ploy',      last_name:'Naree',      nickname:'Ploy',     gender:'Female', age_group:'Under 40',    team:'Process Tech', register_date:'2025-03-04'},
+  {activity_id:'RPT-1019',email:'pang.s@rpt.com',     first_name:'Pang',      last_name:'Sriwan',     nickname:'Pang',     gender:'Female', age_group:'40 and above',team:'Process Tech', register_date:'2025-03-04'},
+  {activity_id:'RPT-1020',email:'palm.r@rpt.com',     first_name:'Palm',      last_name:'Rojana',     nickname:'Palm',     gender:'Male',   age_group:'Under 40',    team:'Process Tech', register_date:'2025-03-05'},
+  {activity_id:'RPT-1021',email:'yui.k@rpt.com',      first_name:'Yui',       last_name:'Kamchai',    nickname:'Yui',      gender:'Female', age_group:'Under 40',    team:'Process Tech', register_date:'2025-03-05'},
+  {activity_id:'RPT-1022',email:'big.t@rpt.com',      first_name:'Big',       last_name:'Tanapon',    nickname:'Big',      gender:'Male',   age_group:'40 and above',team:'Process Tech', register_date:'2025-03-06'},
+  // ── HR (5 คน) ──
+  {activity_id:'RPT-1023',email:'gun.p@rpt.com',      first_name:'Gun',       last_name:'Prasert',    nickname:'Gun',      gender:'Male',   age_group:'40 and above',team:'HR',           register_date:'2025-03-04'},
+  {activity_id:'RPT-1024',email:'joy.k@rpt.com',      first_name:'Joy',       last_name:'Kanchana',   nickname:'Joy',      gender:'Female', age_group:'40 and above',team:'HR',           register_date:'2025-03-05'},
+  {activity_id:'RPT-1025',email:'bam.s@rpt.com',      first_name:'Bam',       last_name:'Suporn',     nickname:'Bam',      gender:'Female', age_group:'Under 40',    team:'HR',           register_date:'2025-03-05'},
+  {activity_id:'RPT-1026',email:'wan.l@rpt.com',      first_name:'Wan',       last_name:'Lalana',     nickname:'Wan',      gender:'Female', age_group:'Under 40',    team:'HR',           register_date:'2025-03-06'},
+  {activity_id:'RPT-1027',email:'nine.b@rpt.com',     first_name:'Nine',      last_name:'Benjamas',   nickname:'Nine',     gender:'Male',   age_group:'Under 40',    team:'HR',           register_date:'2025-03-07'},
+  // ── FINANCE (5 คน) ──
+  {activity_id:'RPT-1028',email:'fah.t@rpt.com',      first_name:'Fah',       last_name:'Tawee',      nickname:'Fah',      gender:'Female', age_group:'40 and above',team:'Finance',      register_date:'2025-03-05'},
+  {activity_id:'RPT-1029',email:'bank.t@rpt.com',     first_name:'Bank',      last_name:'Taweesak',   nickname:'Bank',     gender:'Male',   age_group:'Under 40',    team:'Finance',      register_date:'2025-03-05'},
+  {activity_id:'RPT-1030',email:'zoe.p@rpt.com',      first_name:'Zoe',       last_name:'Pattana',    nickname:'Zoe',      gender:'Female', age_group:'Under 40',    team:'Finance',      register_date:'2025-03-06'},
+  {activity_id:'RPT-1031',email:'net.c@rpt.com',      first_name:'Net',       last_name:'Chalong',    nickname:'Net',      gender:'Male',   age_group:'40 and above',team:'Finance',      register_date:'2025-03-07'},
+  {activity_id:'RPT-1032',email:'opal.r@rpt.com',     first_name:'Opal',      last_name:'Rangsit',    nickname:'Opal',     gender:'Female', age_group:'Under 40',    team:'Finance',      register_date:'2025-03-07'},
+  // ── SALES (4 คน) ──
+  {activity_id:'RPT-1033',email:'aom.w@rpt.com',      first_name:'Aom',       last_name:'Wanna',      nickname:'Aom',      gender:'Female', age_group:'Under 40',    team:'Sales',        register_date:'2025-03-04'},
+  {activity_id:'RPT-1034',email:'ice.p@rpt.com',      first_name:'Ice',       last_name:'Pornpan',    nickname:'Ice',      gender:'Female', age_group:'Under 40',    team:'Sales',        register_date:'2025-03-05'},
+  {activity_id:'RPT-1035',email:'leo.s@rpt.com',      first_name:'Leo',       last_name:'Surasak',    nickname:'Leo',      gender:'Male',   age_group:'Under 40',    team:'Sales',        register_date:'2025-03-06'},
+  {activity_id:'RPT-1036',email:'kwan.m@rpt.com',     first_name:'Kwan',      last_name:'Monruedee',  nickname:'Kwan',     gender:'Female', age_group:'40 and above',team:'Sales',        register_date:'2025-03-07'},
+  // ── MARKETING (4 คน) ──
+  {activity_id:'RPT-1037',email:'nam.r@rpt.com',      first_name:'Nam',       last_name:'Rungroj',    nickname:'Nam',      gender:'Female', age_group:'Under 40',    team:'Marketing',    register_date:'2025-03-05'},
+  {activity_id:'RPT-1038',email:'mew.b@rpt.com',      first_name:'Mew',       last_name:'Bunyarit',   nickname:'Mew',      gender:'Female', age_group:'Under 40',    team:'Marketing',    register_date:'2025-03-06'},
+  {activity_id:'RPT-1039',email:'atom.p@rpt.com',     first_name:'Atom',      last_name:'Phiphat',    nickname:'Atom',     gender:'Male',   age_group:'Under 40',    team:'Marketing',    register_date:'2025-03-06'},
+  {activity_id:'RPT-1040',email:'peak.w@rpt.com',     first_name:'Peak',      last_name:'Wanchai',    nickname:'Peak',     gender:'Male',   age_group:'40 and above',team:'Marketing',    register_date:'2025-03-07'},
+  // ── IT (5 คน) ──
+  {activity_id:'RPT-1041',email:'nut.c@rpt.com',      first_name:'Nut',       last_name:'Chaiyo',     nickname:'Nut',      gender:'Male',   age_group:'Under 40',    team:'IT',           register_date:'2025-03-05'},
+  {activity_id:'RPT-1042',email:'kao.t@rpt.com',      first_name:'Kao',       last_name:'Thanawat',   nickname:'Kao',      gender:'Male',   age_group:'Under 40',    team:'IT',           register_date:'2025-03-06'},
+  {activity_id:'RPT-1043',email:'mod.s@rpt.com',      first_name:'Mod',       last_name:'Siriphat',   nickname:'Mod',      gender:'Female', age_group:'40 and above',team:'IT',           register_date:'2025-03-06'},
+  {activity_id:'RPT-1044',email:'film.k@rpt.com',     first_name:'Film',      last_name:'Kittipat',   nickname:'Film',     gender:'Male',   age_group:'Under 40',    team:'IT',           register_date:'2025-03-07'},
+  {activity_id:'RPT-1045',email:'june.p@rpt.com',     first_name:'June',      last_name:'Pranee',     nickname:'June',     gender:'Female', age_group:'Under 40',    team:'IT',           register_date:'2025-03-07'},
+  // ── MANAGEMENT (5 คน) ──
+  {activity_id:'RPT-1046',email:'krit.m@rpt.com',     first_name:'Krit',      last_name:'Mongkol',    nickname:'Krit',     gender:'Male',   age_group:'40 and above',team:'Management',   register_date:'2025-03-04'},
+  {activity_id:'RPT-1047',email:'dew.w@rpt.com',      first_name:'Dew',       last_name:'Wattana',    nickname:'Dew',      gender:'Male',   age_group:'40 and above',team:'Management',   register_date:'2025-03-05'},
+  {activity_id:'RPT-1048',email:'sue.r@rpt.com',      first_name:'Sue',       last_name:'Ratchada',   nickname:'Sue',      gender:'Female', age_group:'40 and above',team:'Management',   register_date:'2025-03-06'},
+  {activity_id:'RPT-1049',email:'ton.a@rpt.com',      first_name:'Ton',       last_name:'Anuwat',     nickname:'Ton',      gender:'Male',   age_group:'40 and above',team:'Management',   register_date:'2025-03-07'},
+  {activity_id:'RPT-1050',email:'mai.s@rpt.com',      first_name:'Mai',       last_name:'Somsak',     nickname:'Mai',      gender:'Female', age_group:'Under 40',    team:'Management',   register_date:'2025-03-07'},
+];
+
+// ── Per-person profiles: burnBase, burnVar, sleepBase, sleepVar, restDays, trend ──
+// trend = multiplier applied to last 5 days to create visible momentum (+/-)
+const DEMO_PROFILES = {
+  // ENGINEERING — hot team, trending up strongly last 5d
+  'RPT-1001': { burnBase:680, burnVar:160, sleepBase:7.2, sleepVar:0.7, restDays:[0],   trend:1.55 },  // Moss — 🔥 #1 rising star
+  'RPT-1002': { burnBase:590, burnVar:140, sleepBase:7.8, sleepVar:0.5, restDays:[0],   trend:1.40 },  // Mint
+  'RPT-1003': { burnBase:720, burnVar:180, sleepBase:6.8, sleepVar:0.9, restDays:[6],   trend:1.30 },  // Tong — top burner
+  'RPT-1004': { burnBase:420, burnVar:100, sleepBase:8.3, sleepVar:0.4, restDays:[0,6], trend:1.10 },  // Earn
+  'RPT-1005': { burnBase:500, burnVar:120, sleepBase:7.0, sleepVar:0.6, restDays:[0],   trend:1.20 },  // Ake
+  'RPT-1006': { burnBase:460, burnVar:110, sleepBase:7.5, sleepVar:0.5, restDays:[6],   trend:1.15 },  // Prae
+  // QA — moderate, slight upward momentum
+  'RPT-1007': { burnBase:490, burnVar:120, sleepBase:7.9, sleepVar:0.5, restDays:[0],   trend:1.18 },  // Aria
+  'RPT-1008': { burnBase:460, burnVar:130, sleepBase:7.3, sleepVar:0.7, restDays:[0,6], trend:1.12 },  // Pop
+  'RPT-1009': { burnBase:430, burnVar:105, sleepBase:8.1, sleepVar:0.4, restDays:[6],   trend:0.95 },  // Pim — dipping
+  'RPT-1010': { burnBase:380, burnVar:85,  sleepBase:7.0, sleepVar:0.8, restDays:[0],   trend:1.05 },  // New
+  'RPT-1011': { burnBase:440, burnVar:110, sleepBase:7.6, sleepVar:0.5, restDays:[6],   trend:1.22 },  // Gift
+  // OPERATION — comeback team: was low, now surging hard
+  'RPT-1012': { burnBase:540, burnVar:160, sleepBase:6.6, sleepVar:1.0, restDays:[6],   trend:1.70 },  // Beam — biggest comeback
+  'RPT-1013': { burnBase:410, burnVar:95,  sleepBase:7.8, sleepVar:0.5, restDays:[0],   trend:1.60 },  // Nook
+  'RPT-1014': { burnBase:580, burnVar:150, sleepBase:7.0, sleepVar:0.8, restDays:[0],   trend:1.65 },  // Max — surging
+  'RPT-1015': { burnBase:390, burnVar:90,  sleepBase:8.0, sleepVar:0.4, restDays:[0,6], trend:1.50 },  // Fern
+  'RPT-1016': { burnBase:510, burnVar:130, sleepBase:6.9, sleepVar:0.8, restDays:[6],   trend:1.55 },  // Bas
+  'RPT-1017': { burnBase:470, burnVar:115, sleepBase:7.2, sleepVar:0.6, restDays:[0],   trend:1.48 },  // Oh
+  // PROCESS TECH — flat/slightly declining recently
+  'RPT-1018': { burnBase:410, burnVar:100, sleepBase:8.2, sleepVar:0.4, restDays:[0,6], trend:0.88 },  // Ploy
+  'RPT-1019': { burnBase:450, burnVar:120, sleepBase:8.5, sleepVar:0.3, restDays:[0,6], trend:0.85 },  // Pang — sleep queen but burn dropping
+  'RPT-1020': { burnBase:490, burnVar:130, sleepBase:7.1, sleepVar:0.7, restDays:[6],   trend:0.92 },  // Palm
+  'RPT-1021': { burnBase:360, burnVar:85,  sleepBase:7.6, sleepVar:0.5, restDays:[0],   trend:0.90 },  // Yui
+  'RPT-1022': { burnBase:420, burnVar:100, sleepBase:7.0, sleepVar:0.8, restDays:[6],   trend:0.87 },  // Big
+  // HR — steady, no big swings
+  'RPT-1023': { burnBase:350, burnVar:80,  sleepBase:6.1, sleepVar:1.1, restDays:[6],   trend:1.02 },  // Gun
+  'RPT-1024': { burnBase:330, burnVar:75,  sleepBase:7.8, sleepVar:0.4, restDays:[0,6], trend:1.05 },  // Joy
+  'RPT-1025': { burnBase:380, burnVar:90,  sleepBase:7.5, sleepVar:0.5, restDays:[0],   trend:0.98 },  // Bam
+  'RPT-1026': { burnBase:310, burnVar:70,  sleepBase:7.9, sleepVar:0.4, restDays:[6],   trend:1.00 },  // Wan
+  'RPT-1027': { burnBase:400, burnVar:100, sleepBase:7.2, sleepVar:0.6, restDays:[0],   trend:1.08 },  // Nine
+  // FINANCE — mixed, moderate
+  'RPT-1028': { burnBase:430, burnVar:110, sleepBase:7.7, sleepVar:0.6, restDays:[0,6], trend:1.10 },  // Fah
+  'RPT-1029': { burnBase:490, burnVar:135, sleepBase:6.6, sleepVar:1.0, restDays:[0],   trend:1.15 },  // Bank
+  'RPT-1030': { burnBase:370, burnVar:90,  sleepBase:7.8, sleepVar:0.5, restDays:[6],   trend:1.05 },  // Zoe
+  'RPT-1031': { burnBase:310, burnVar:70,  sleepBase:6.9, sleepVar:0.9, restDays:[0,6], trend:0.95 },  // Net
+  'RPT-1032': { burnBase:400, burnVar:100, sleepBase:7.5, sleepVar:0.5, restDays:[0],   trend:1.08 },  // Opal
+  // SALES — high energy, trending up
+  'RPT-1033': { burnBase:380, burnVar:90,  sleepBase:8.0, sleepVar:0.5, restDays:[0],   trend:1.25 },  // Aom
+  'RPT-1034': { burnBase:510, burnVar:145, sleepBase:7.7, sleepVar:0.6, restDays:[0],   trend:1.30 },  // Ice
+  'RPT-1035': { burnBase:560, burnVar:155, sleepBase:7.0, sleepVar:0.8, restDays:[6],   trend:1.35 },  // Leo — sales hustle
+  'RPT-1036': { burnBase:390, burnVar:95,  sleepBase:7.5, sleepVar:0.5, restDays:[0,6], trend:1.20 },  // Kwan
+  // MARKETING — low-moderate, improving
+  'RPT-1037': { burnBase:360, burnVar:85,  sleepBase:7.4, sleepVar:0.6, restDays:[6],   trend:1.15 },  // Nam
+  'RPT-1038': { burnBase:380, burnVar:90,  sleepBase:7.6, sleepVar:0.5, restDays:[0],   trend:1.18 },  // Mew
+  'RPT-1039': { burnBase:440, burnVar:110, sleepBase:7.1, sleepVar:0.7, restDays:[6],   trend:1.20 },  // Atom
+  'RPT-1040': { burnBase:320, burnVar:75,  sleepBase:7.3, sleepVar:0.6, restDays:[0,6], trend:1.10 },  // Peak
+  // IT — geek power, high and rising
+  'RPT-1041': { burnBase:520, burnVar:150, sleepBase:7.0, sleepVar:0.8, restDays:[0],   trend:1.40 },  // Nut
+  'RPT-1042': { burnBase:560, burnVar:160, sleepBase:6.8, sleepVar:0.9, restDays:[6],   trend:1.45 },  // Kao — IT champion
+  'RPT-1043': { burnBase:400, burnVar:100, sleepBase:7.9, sleepVar:0.5, restDays:[0,6], trend:1.25 },  // Mod
+  'RPT-1044': { burnBase:490, burnVar:130, sleepBase:7.2, sleepVar:0.7, restDays:[0],   trend:1.38 },  // Film
+  'RPT-1045': { burnBase:380, burnVar:90,  sleepBase:8.0, sleepVar:0.4, restDays:[6],   trend:1.20 },  // June
+  // MANAGEMENT — lower burn, decent sleep
+  'RPT-1046': { burnBase:310, burnVar:70,  sleepBase:6.9, sleepVar:0.9, restDays:[6],   trend:0.90 },  // Krit
+  'RPT-1047': { burnBase:280, burnVar:65,  sleepBase:6.3, sleepVar:1.0, restDays:[0,6], trend:0.85 },  // Dew
+  'RPT-1048': { burnBase:320, burnVar:75,  sleepBase:7.5, sleepVar:0.5, restDays:[0,6], trend:0.92 },  // Sue
+  'RPT-1049': { burnBase:340, burnVar:80,  sleepBase:7.1, sleepVar:0.7, restDays:[6],   trend:0.88 },  // Ton
+  'RPT-1050': { burnBase:390, burnVar:95,  sleepBase:7.8, sleepVar:0.5, restDays:[0],   trend:1.05 },  // Mai
+};
+
+// Seeded random — deterministic same data every load
+function seededRand(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = Math.imul(1664525, s) + 1013904223 >>> 0;
+    return s / 4294967296;
+  };
+}
+
+function buildDemoEntries() {
+  const entries = [];
+  // 8 weeks total: weeks 1-5 = baseline, weeks 6-7 = "earlier avg", week 8 = "recent surge"
+  const baseDate = new Date('2025-03-03');
+  const TOTAL_DAYS = 56; // 8 weeks
+  const RECENT_CUTOFF = 51; // last 5 days get trend applied
+
+  DEMO_PARTICIPANTS.forEach((p, pi) => {
+    const prof = DEMO_PROFILES[p.activity_id];
+    const rng = seededRand(pi * 9973 + 12345);
+    for (let d = 0; d < TOTAL_DAYS; d++) {
+      const dt = new Date(baseDate);
+      dt.setDate(baseDate.getDate() + d);
+      const ds = dt.toISOString().split('T')[0];
+      const dow = dt.getDay();
+      const isRest = prof.restDays.includes(dow);
+      // Apply trend multiplier in last 5 days for momentum visibility
+      const trendMult = d >= RECENT_CUTOFF ? prof.trend : 1.0;
+      let burn = isRest ? 0 : Math.round((prof.burnBase * trendMult + (rng() - 0.5) * 2 * prof.burnVar) * 10) / 10;
+      let sleep = Math.round((prof.sleepBase + (rng() - 0.5) * 2 * prof.sleepVar) * 10) / 10;
+      const submitDt = new Date(dt);
+      submitDt.setHours(19 + Math.floor(rng() * 4), Math.floor(rng() * 59));
+      entries.push({
+        activity_id: p.activity_id,
+        date: ds,
+        burn_kcal: Math.max(0, Math.round(burn * 10) / 10),
+        sleep_hr:  Math.min(11.5, Math.max(4.0, Math.round(sleep * 10) / 10)),
+        week_id:   getWeekId(ds),
+        submit_timestamp: submitDt.toISOString()
+      });
+    }
+  });
+  return entries;
+}
+
+function buildDemoProofs() {
+  const proofs = [];
+  const weeks = ['2025-W11','2025-W12','2025-W13','2025-W14','2025-W15','2025-W16','2025-W17','2025-W18'];
+  DEMO_PARTICIPANTS.forEach((p, pi) => {
+    const rng = seededRand(pi * 3571 + 8888);
+    weeks.forEach(w => {
+      if (rng() > 0.20) { // 80% submission rate
+        proofs.push({
+          activity_id: p.activity_id, week_id: w,
+          burn_proof: null, bed_proof: null,
+          combined: rng() > 0.5,
+          proof_submit_date: '2025-04-27'
+        });
+      }
+    });
+  });
+  return proofs;
+}
+
+function buildDemoEvents() {
+  return [
+    { id:1001, name:'🔥 Burn Boost Week',      metric:'burn', multiplier:2,   target:'all',
+      start_date:'2025-03-17', end_date:'2025-03-23',
+      banner_text:'🔥 BURN WEEK — All calories ×2 this week!', created:'2025-03-16' },
+    { id:1002, name:'😴 Sleep Challenge',       metric:'bed',  multiplier:1.5, target:'all',
+      start_date:'2025-03-31', end_date:'2025-04-06',
+      banner_text:'😴 SLEEP WEEK — Sleep hours ×1.5!', created:'2025-03-30' },
+    { id:1003, name:'🚀 Operation Comeback!',   metric:'burn', multiplier:1.5, target:'Operation',
+      start_date:'2025-04-14', end_date:'2025-04-27',
+      banner_text:'🚀 OPERATION POWER-UP — Burn ×1.5 to climb the rankings!', created:'2025-04-13' },
+    { id:1004, name:'⚡ IT Surge Week',         metric:'burn', multiplier:1.5, target:'IT',
+      start_date:'2025-04-21', end_date:'2025-04-27',
+      banner_text:'⚡ IT SURGE — IT team Burn ×1.5 this week!', created:'2025-04-20' },
+  ];
+}
+
+function loadDemoIfEmpty() {
+  if (getParticipants().length > 0) return;
+  const teams = ['Engineering','QA','Operation','Process Tech','HR','Finance','Sales','Marketing','IT','Management'];
+  save(KEYS.teams, teams);
+  save(KEYS.participants, DEMO_PARTICIPANTS);
+  save(KEYS.entries, buildDemoEntries());
+  save(KEYS.proofs, buildDemoProofs());
+  save(KEYS.events, buildDemoEvents());
+}
+
+function seedDemoData(){
+  if(!confirm('Replace all data with full 50-person demo? Continue?')) return;
+  Object.values(KEYS).forEach(k=>localStorage.removeItem(k));
+  loadDemoIfEmpty();
+  alert('✅ Full demo loaded!\n• 50 participants across 10 teams\n• 8 weeks of activity (2,800 entries)\n• Visible momentum & team movement\n• 4 events (2 active)');
+  location.reload();
+}
+
+function exportData(){
+  const data={participants:getParticipants(),entries:getEntries(),proofs:getProofs().map(p=>({...p,burn_proof:'[img]',bed_proof:'[img]'})),events:getEvents(),teams:getTeams()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`rpt-burnbed-${today()}.json`;a.click();
+}
+function resetAllData(){Object.values(KEYS).forEach(k=>localStorage.removeItem(k));alert('All data cleared.');location.reload();}
+
+// ====================================================
+// INIT
+// ====================================================
+document.addEventListener('DOMContentLoaded',()=>{
+  // Force reload demo if participant count < 50 (handles stale old data)
+  const existing = getParticipants();
+  if (existing.length < 50) {
+    Object.values(KEYS).forEach(k => localStorage.removeItem(k));
+    loadDemoIfEmpty();
+  }
+
+  populateTeamSelect();populateEventTargets();
+  const de=document.getElementById('entry-date');if(de) de.value=today();
+  const es=document.getElementById('ev-start'),ee=document.getElementById('ev-end');
+  if(es) es.value=today();
+  if(ee){const d=new Date();d.setDate(d.getDate()+7);ee.value=d.toISOString().split('T')[0];}
+  initBatchRows();updateHeaderPill();
+  renderAdminSearch();
+  // Switch to dashboard by default to show all the data
+  switchModule('dashboard');
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')exitTVMode();});
+  console.log('🔥 RPT Burn & Bed v3 — Light Theme + Demo Ready');
+});
+
+
+// ── Patch: push new entry to Sheets too ──────────────────────
+const _orig_saveEntry = _saveEntry;
+function _saveEntry(data) {
+  _orig_saveEntry(data);
+  pushToSheets('entries', data, 'activity_id', 'date');
+}
+const _orig_register = registerParticipant;
+function registerParticipant() {
+  _orig_register();
+  setTimeout(() => {
+    const ps = getParticipants();
+    if (ps.length) pushToSheets('participants', ps[ps.length-1], 'activity_id');
+  }, 150);
+}
+const _orig_createEvent = createEvent;
+function createEvent() {
+  _orig_createEvent();
+  setTimeout(() => {
+    const evs = getEvents();
+    if (evs.length) pushToSheets('events', evs[evs.length-1], 'id');
+  }, 150);
+}
+// ── Init: restore saved API URL ──────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const urlEl = document.getElementById('gs-api-url');
+  if (urlEl && gsApiUrl) {
+    urlEl.value = gsApiUrl;
+    gsGet('participants')
+      .then(d => { if (Array.isArray(d) && d.length > 0) { updateConnBadge(true); setGsStatus('ok', `Connected — ${d.length} participants`); } })
+      .catch(() => {});
+  }
+}, { once: true });
+
+</script>
+</body>
+</html>
